@@ -130,7 +130,8 @@ body { background-color: #f4f6f9; color: #333; }
 .view-btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
 
 /* ==================== FOOTER ==================== */
-body { display: flex; flex-direction: column; min-height: 100vh; }
+body, html { max-width: 100%; overflow-x: hidden; }
+body { display: flex; flex-direction: column; min-height: 100vh; width: 100%; }
 
 .footer-section.site-footer {
     background: #0f1115;
@@ -247,7 +248,7 @@ body { display: flex; flex-direction: column; min-height: 100vh; }
     .search-box { flex-direction: column; padding: 10px; }
     .search-box input { width: 100%; text-align: center; border-bottom: 1px solid #eee; }
     .format-select, .btn-download { width: 100%; margin: 5px 0; }
-    .footer-grid { grid-template-columns: repeat(2, 1fr); }
+    .footer-section .footer-container { grid-template-columns: repeat(2, 1fr); }
 }
 .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
@@ -266,7 +267,7 @@ body { display: flex; flex-direction: column; min-height: 100vh; }
     .admin-sidebar.active { left: 0; }
     .admin-main { margin-left: 0; width: 100%; padding: 20px 20px 0 20px; }
     
-    .footer-grid { grid-template-columns: 1fr; text-align: center; }
+    .footer-section .footer-container { grid-template-columns: 1fr; text-align: center; }
 }
 
 @media (max-width: 576px) {
