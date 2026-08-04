@@ -447,9 +447,14 @@ def login():
         password = request.form.get('password', '').strip()
         remember = request.form.get('remember') == 'on'
         
+        # Determine redirect URL based on form's next input
+        next_url = request.form.get('next', url_for('home'))
+        if '?' in next_url:
+            next_url = next_url.split('?')[0] # Remove old query params
+        
         if not username or not password:
             flash("Please enter both username and password.", "danger")
-            return redirect(url_for('login'))
+            return redirect(f"{next_url}?auth=login")
             
         conn = get_db_connection()
         user = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
@@ -463,11 +468,10 @@ def login():
             if remember:
                 session.permanent = True
             flash("Login Successful!", "success")
-            return redirect(url_for('home'))
+            return redirect(next_url)
         else:
             flash("Invalid Username or Password.", "danger")
-            
-    return render_template('login.html')
+    return redirect(url_for('home', auth='login'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -477,17 +481,22 @@ def register():
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
         
+        # Determine redirect URL based on form's next input
+        next_url = request.form.get('next', url_for('home'))
+        if '?' in next_url:
+            next_url = next_url.split('?')[0]
+        
         if not username or not email or not password or not confirm_password:
             flash("Please fill out all fields.", "warning")
-            return redirect(url_for('register'))
+            return redirect(f"{next_url}?auth=signup")
             
         if password != confirm_password:
             flash("Passwords do not match.", "danger")
-            return redirect(url_for('register'))
+            return redirect(f"{next_url}?auth=signup")
             
         if len(password) < 8:
             flash("Password must be at least 8 characters long.", "danger")
-            return redirect(url_for('register'))
+            return redirect(f"{next_url}?auth=signup")
             
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -499,7 +508,7 @@ def register():
                 flash("Username already exists.", "danger")
             else:
                 flash("Email already exists.", "danger")
-            return redirect(url_for('register'))
+            return redirect(f"{next_url}?auth=signup")
             
         hashed_password = generate_password_hash(password)
         try:
@@ -509,14 +518,15 @@ def register():
             )
             conn.commit()
             flash("Account Created Successfully! Please log in.", "success")
-            return redirect(url_for('login'))
+            return redirect(f"{next_url}?auth=login")
         except Exception as e:
             print(f"[DB Error] Registration failed: {e}")
             flash("Something went wrong during registration.", "danger")
+            return redirect(f"{next_url}?auth=signup")
         finally:
             conn.close()
             
-    return render_template('register.html')
+    return redirect(url_for('home', auth='signup'))
 
 @app.route('/logout')
 def logout():

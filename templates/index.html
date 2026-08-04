@@ -59,7 +59,10 @@
                 <span class="logo-yellow">Save</span><span class="logo-white">Vibe.com</span>
             </a>
         </div>
-        <div class="nav-menu">
+        <button class="mobile-menu-toggle" onclick="document.getElementById('navMenu').classList.toggle('active')">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="nav-menu" id="navMenu">
             <a href="/" class="active">Home</a>
             <a href="/about">About Us</a>
             <a href="/contact">Contact Us</a>
@@ -70,7 +73,10 @@
                 <a href="/profile">Profile</a>
                 <a href="/logout">Logout</a>
             {% else %}
-                <a href="/login">Login</a>
+                <div class="auth-buttons">
+                    <a href="javascript:void(0)" class="btn-login" onclick="openAuthModal('login')">Login</a>
+                    <a href="javascript:void(0)" class="btn-signup" onclick="openAuthModal('signup')">Sign Up</a>
+                </div>
             {% endif %}
         </div>
     </nav>
@@ -197,5 +203,8 @@
             }, 90000); 
         };
     </script>
+    
+    <!-- Auth Modal Include -->
+    {% include '_auth_modal.html' %}
 </body>
 </html>

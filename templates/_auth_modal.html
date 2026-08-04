@@ -1,0 +1,155 @@
+<!-- Auth Modal Overlay -->
+<div id="authModalOverlay" class="auth-modal-overlay">
+    <div class="auth-modal-content">
+        <!-- Close Button -->
+        <button type="button" class="close-modal-btn" onclick="closeAuthModal()">&times;</button>
+
+        <!-- Flash Messages (inside modal) -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="modal-flash-container">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}" style="text-align: center; padding: 10px; border-radius: 6px; background: {% if category == 'success' %}#2ed573{% elif category == 'info' %}#1e90ff{% else %}#ff3333{% endif %}; color: white; font-weight: 500; font-size: 13px; margin-bottom: 15px;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Login Form Section -->
+        <div id="loginFormSection" class="auth-section">
+            <h2 class="auth-modal-title"><i class="fas fa-sign-in-alt"></i> Login</h2>
+            <form action="{{ url_for('login') }}" method="POST">
+                <input type="hidden" name="next" id="loginNextUrl" value="">
+                <div class="form-group">
+                    <input type="text" name="username" class="form-input" placeholder="Username" required>
+                </div>
+                <div class="form-group password-wrapper">
+                    <input type="password" name="password" class="form-input pwd-input" placeholder="Password" required>
+                    <i class="fas fa-eye toggle-password" onclick="togglePasswordVisibility(this)"></i>
+                </div>
+                <div class="remember-me">
+                    <input type="checkbox" name="remember" id="modal_remember">
+                    <label for="modal_remember">Remember Me</label>
+                </div>
+                <button type="submit" class="btn-auth">Login</button>
+            </form>
+            <div class="auth-links">
+                <p>Don't have an account? <a href="javascript:void(0)" onclick="switchAuthTab('signup')">Sign Up</a></p>
+            </div>
+        </div>
+
+        <!-- Signup Form Section -->
+        <div id="signupFormSection" class="auth-section" style="display: none;">
+            <h2 class="auth-modal-title"><i class="fas fa-user-plus"></i> Sign Up</h2>
+            <form action="{{ url_for('register') }}" method="POST">
+                <input type="hidden" name="next" id="registerNextUrl" value="">
+                <div class="form-group">
+                    <input type="text" name="username" class="form-input" placeholder="Username" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" name="email" class="form-input" placeholder="Email Address" required>
+                </div>
+                <div class="form-group password-wrapper">
+                    <input type="password" name="password" class="form-input pwd-input" placeholder="Password (Min 8 Chars)" required minlength="8">
+                    <i class="fas fa-eye toggle-password" onclick="togglePasswordVisibility(this)"></i>
+                </div>
+                <div class="form-group password-wrapper">
+                    <input type="password" name="confirm_password" class="form-input pwd-input" placeholder="Confirm Password" required minlength="8">
+                    <i class="fas fa-eye toggle-password" onclick="togglePasswordVisibility(this)"></i>
+                </div>
+                <button type="submit" class="btn-auth">Create Account</button>
+            </form>
+            <div class="auth-links">
+                <p>Already have an account? <a href="javascript:void(0)" onclick="switchAuthTab('login')">Login here</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Authentication Modal Logic ---
+
+    function openAuthModal(type) {
+        const overlay = document.getElementById('authModalOverlay');
+        overlay.style.display = 'flex';
+        // Force reflow for animation
+        overlay.offsetWidth;
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        
+        switchAuthTab(type);
+
+        // Update hidden next input with current path
+        const currentPath = window.location.pathname;
+        document.getElementById('loginNextUrl').value = currentPath;
+        document.getElementById('registerNextUrl').value = currentPath;
+    }
+
+    function closeAuthModal() {
+        const overlay = document.getElementById('authModalOverlay');
+        overlay.classList.remove('active');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        }, 300); // Wait for transition
+        
+        // Remove ?auth= param from URL without refreshing
+        const url = new URL(window.location);
+        if (url.searchParams.has('auth')) {
+            url.searchParams.delete('auth');
+            window.history.replaceState({}, '', url);
+        }
+    }
+
+    function switchAuthTab(type) {
+        const loginSection = document.getElementById('loginFormSection');
+        const signupSection = document.getElementById('signupFormSection');
+        
+        if (type === 'signup') {
+            loginSection.style.display = 'none';
+            signupSection.style.display = 'block';
+        } else {
+            signupSection.style.display = 'none';
+            loginSection.style.display = 'block';
+        }
+    }
+
+    // Toggle password visibility
+    function togglePasswordVisibility(iconElement) {
+        const input = iconElement.previousElementSibling;
+        if (input.type === 'password') {
+            input.type = 'text';
+            iconElement.classList.remove('fa-eye');
+            iconElement.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            iconElement.classList.remove('fa-eye-slash');
+            iconElement.classList.add('fa-eye');
+        }
+    }
+
+    // Close on outside click
+    document.getElementById('authModalOverlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeAuthModal();
+        }
+    });
+
+    // Close on ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('authModalOverlay').style.display === 'flex') {
+            closeAuthModal();
+        }
+    });
+
+    // Automatically open modal if ?auth= query param is present
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const authParam = urlParams.get('auth');
+        if (authParam === 'login' || authParam === 'signup') {
+            openAuthModal(authParam);
+        }
+    });
+</script>
