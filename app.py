@@ -334,10 +334,17 @@ def log_download_db(title, format_type='Unknown', file_size='Unknown', thumbnail
                     (username, title, local_time, user_id, format_type, file_size, thumbnail, 'Completed')
                 )
             except sqlite3.OperationalError:
-                cursor.execute(
-                    "INSERT INTO downloads (username, video_title, timestamp) VALUES (?, ?, ?)",
-                    (username, title, local_time)
-                )
+                try:
+                    cursor.execute(
+                        "INSERT INTO downloads (username, video_title, timestamp) VALUES (?, ?, ?)",
+                        (username, title, local_time)
+                    )
+                except sqlite3.OperationalError:
+                    # Absolute bare minimum fallback if even username is missing
+                    cursor.execute(
+                        "INSERT INTO downloads (video_title, timestamp) VALUES (?, ?)",
+                        (title, local_time)
+                    )
             
         conn.commit()
         conn.close()
@@ -427,7 +434,7 @@ def fetch_rapidapi_download_url(video_id, format_type='1080'):
     video_title = data.get('title', 'SaveVibe_Media')
 
     prog_url = "https://youtube-mp4-mp3-downloader.p.rapidapi.com/api/v1/progress"
-    for _ in range(15):
+    for _ in range(80):
         time.sleep(1)
         prog_resp = requests.get(prog_url, headers=headers, params={"id": progress_id}, timeout=10)
         prog_data = prog_resp.json()
@@ -545,17 +552,33 @@ def admin_panel():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        total_downloads = cursor.execute("SELECT COUNT(*) FROM downloads").fetchone()[0]
-        total_feedbacks = cursor.execute("SELECT COUNT(*) FROM feedbacks").fetchone()[0]
-        downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY timestamp DESC, id DESC LIMIT 20").fetchall()
+        try:
+            total_downloads = cursor.execute("SELECT COUNT(*) FROM downloads").fetchone()[0]
+        except sqlite3.OperationalError:
+            total_downloads = 0
+            
+        try:
+            total_feedbacks = cursor.execute("SELECT COUNT(*) FROM feedbacks").fetchone()[0]
+        except sqlite3.OperationalError:
+            total_feedbacks = 0
+            
+        try:
+            downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY timestamp DESC, id DESC LIMIT 20").fetchall()
+        except sqlite3.OperationalError:
+            downloads_list = []
 
         conn.close()
-        return render_template(
+        
+        response = make_response(render_template(
             'admin.html',
             total_downloads=total_downloads,
             total_feedbacks=total_feedbacks,
             downloads_list=downloads_list
-        )
+        ))
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
     except Exception as e:
         print(f"[Admin Panel Error] Failed to load dashboard: {e}")
         flash("An error occurred while loading the Admin Dashboard. Please try again.", "danger")
@@ -568,9 +591,17 @@ def admin_downloads():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY timestamp DESC, id DESC").fetchall()
+        try:
+            downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY timestamp DESC, id DESC").fetchall()
+        except sqlite3.OperationalError:
+            downloads_list = []
         conn.close()
-        return render_template('admin_downloads.html', downloads_list=downloads_list)
+        
+        response = make_response(render_template('admin_downloads.html', downloads_list=downloads_list))
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
     except Exception as e:
         print(f"[Admin Downloads Error] Failed to load downloads: {e}")
         flash("An error occurred while loading the downloads list. Please try again.", "danger")
@@ -583,9 +614,17 @@ def admin_feedbacks():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        feedbacks_list = cursor.execute("SELECT * FROM feedbacks ORDER BY timestamp DESC, id DESC").fetchall()
+        try:
+            feedbacks_list = cursor.execute("SELECT * FROM feedbacks ORDER BY timestamp DESC, id DESC").fetchall()
+        except sqlite3.OperationalError:
+            feedbacks_list = []
         conn.close()
-        return render_template('admin_feedbacks.html', feedbacks_list=feedbacks_list)
+        
+        response = make_response(render_template('admin_feedbacks.html', feedbacks_list=feedbacks_list))
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
     except Exception as e:
         print(f"[Admin Feedbacks Error] Failed to load feedbacks: {e}")
         flash("An error occurred while loading visitor feedbacks. Please try again.", "danger")
@@ -713,18 +752,21 @@ def profile():
             
         user = dict(user_row)
         
-        # Calculate advanced stats via SQL
-        stats_row = conn.execute(
-            """
-            SELECT 
-                COUNT(id) as total_downloads,
-                SUM(CASE WHEN LOWER(format) LIKE '%mp4%' OR LOWER(format) LIKE '%video%' THEN 1 ELSE 0 END) as mp4_count,
-                SUM(CASE WHEN LOWER(format) LIKE '%mp3%' OR LOWER(format) LIKE '%audio%' THEN 1 ELSE 0 END) as mp3_count,
-                SUM(CASE WHEN LOWER(format) IN ('720', '1080', '1440', '2160', '720p', '1080p', '1440p', '2160p', '4k', '8k') THEN 1 ELSE 0 END) as hd_count
-            FROM downloads WHERE user_id = ?
-            """, 
-            (user['id'],)
-        ).fetchone()
+        # Calculate advanced stats via SQL safely
+        try:
+            stats_row = conn.execute(
+                """
+                SELECT 
+                    COUNT(id) as total_downloads,
+                    SUM(CASE WHEN LOWER(format) LIKE '%mp4%' OR LOWER(format) LIKE '%video%' THEN 1 ELSE 0 END) as mp4_count,
+                    SUM(CASE WHEN LOWER(format) LIKE '%mp3%' OR LOWER(format) LIKE '%audio%' THEN 1 ELSE 0 END) as mp3_count,
+                    SUM(CASE WHEN LOWER(format) IN ('720', '1080', '1440', '2160', '720p', '1080p', '1440p', '2160p', '4k', '8k') THEN 1 ELSE 0 END) as hd_count
+                FROM downloads WHERE user_id = ?
+                """, 
+                (user['id'],)
+            ).fetchone()
+        except sqlite3.OperationalError:
+            stats_row = {'total_downloads': 0, 'mp4_count': 0, 'mp3_count': 0, 'hd_count': 0}
 
         total_downloads = stats_row['total_downloads'] or 0
         mp4_count = stats_row['mp4_count'] or 0
@@ -742,18 +784,25 @@ def profile():
             'favorite_format': favorite_format
         }
 
-        # Get latest 5 downloads for the recent history card
-        downloads_rows = conn.execute(
-            "SELECT * FROM downloads WHERE user_id = ? ORDER BY timestamp DESC, id DESC LIMIT 5", 
-            (user['id'],)
-        ).fetchall()
+        # Get latest 5 downloads for the recent history card safely
+        try:
+            downloads_rows = conn.execute(
+                "SELECT * FROM downloads WHERE user_id = ? ORDER BY timestamp DESC, id DESC LIMIT 5", 
+                (user['id'],)
+            ).fetchall()
+        except sqlite3.OperationalError:
+            downloads_rows = []
         
         recent_downloads = [dict(d) for d in downloads_rows]
         latest_download = recent_downloads[0] if recent_downloads else None
 
         conn.close()
         
-        return render_template('profile.html', user=user, recent_downloads=recent_downloads, total_downloads=total_downloads, latest_download=latest_download, stats=stats)
+        response = make_response(render_template('profile.html', user=user, recent_downloads=recent_downloads, total_downloads=total_downloads, latest_download=latest_download, stats=stats))
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
     except Exception as e:
         print(f"[Profile Error] Failed to load profile: {e}")
         flash("An error occurred while loading your profile.", "danger")
@@ -773,17 +822,24 @@ def history():
             
         user = dict(user_row)
         
-        # Get only the user's downloads strictly by user_id
-        downloads_rows = conn.execute(
-            "SELECT * FROM downloads WHERE user_id = ? ORDER BY timestamp DESC, id DESC LIMIT 50", 
-            (user['id'],)
-        ).fetchall()
+        # Get only the user's downloads strictly by user_id safely
+        try:
+            downloads_rows = conn.execute(
+                "SELECT * FROM downloads WHERE user_id = ? ORDER BY timestamp DESC, id DESC LIMIT 50", 
+                (user['id'],)
+            ).fetchall()
+        except sqlite3.OperationalError:
+            downloads_rows = []
         
         downloads = [dict(d) for d in downloads_rows]
         
         conn.close()
         
-        return render_template('history.html', user=user, downloads=downloads)
+        response = make_response(render_template('history.html', user=user, downloads=downloads))
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
     except Exception as e:
         print(f"[History Error] Failed to load history: {e}")
         flash("An error occurred while loading your history.", "danger")
