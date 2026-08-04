@@ -1,6 +1,6 @@
 <!-- Navbar Profile Dropdown -->
 <div class="profile-dropdown-container" id="profileDropdownContainer">
-    <div class="nav-avatar" onclick="toggleProfileDropdown()">
+    <div class="nav-avatar" onclick="toggleProfileDropdown(event)">
         {% if session.get('profile_picture') %}
             <img src="{{ url_for('static', filename=session.get('profile_picture')) }}" alt="Avatar" class="avatar-img" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
         {% else %}
@@ -36,7 +36,11 @@
 </div>
 
 <script>
-    function toggleProfileDropdown() {
+    function toggleProfileDropdown(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         const menu = document.getElementById('profileDropdownMenu');
         menu.classList.toggle('active');
     }
@@ -45,7 +49,7 @@
     document.addEventListener('click', function(event) {
         const container = document.getElementById('profileDropdownContainer');
         const menu = document.getElementById('profileDropdownMenu');
-        if (container && menu && !container.contains(event.target)) {
+        if (container && menu && menu.classList.contains('active') && !container.contains(event.target)) {
             menu.classList.remove('active');
         }
     });

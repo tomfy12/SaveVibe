@@ -709,21 +709,47 @@ def profile():
             
         user = dict(user_row)
         
-        # Get only the user's downloads strictly by user_id
+        # Calculate advanced stats via SQL
+        stats_row = conn.execute(
+            """
+            SELECT 
+                COUNT(id) as total_downloads,
+                SUM(CASE WHEN LOWER(format) LIKE '%mp4%' OR LOWER(format) LIKE '%video%' THEN 1 ELSE 0 END) as mp4_count,
+                SUM(CASE WHEN LOWER(format) LIKE '%mp3%' OR LOWER(format) LIKE '%audio%' THEN 1 ELSE 0 END) as mp3_count,
+                SUM(CASE WHEN LOWER(quality) IN ('720p', '1080p', '1440p', '2160p', '4k', '8k') THEN 1 ELSE 0 END) as hd_count
+            FROM downloads WHERE user_id = ?
+            """, 
+            (user['id'],)
+        ).fetchone()
+
+        total_downloads = stats_row['total_downloads'] or 0
+        mp4_count = stats_row['mp4_count'] or 0
+        mp3_count = stats_row['mp3_count'] or 0
+        hd_count = stats_row['hd_count'] or 0
+
+        favorite_format = "None"
+        if total_downloads > 0:
+            favorite_format = "MP3 Audio" if mp3_count > mp4_count else "MP4 Video"
+
+        stats = {
+            'mp4_count': mp4_count,
+            'mp3_count': mp3_count,
+            'hd_count': hd_count,
+            'favorite_format': favorite_format
+        }
+
+        # Get latest 5 downloads for the recent history card
         downloads_rows = conn.execute(
-            "SELECT * FROM downloads WHERE user_id = ? ORDER BY timestamp DESC, id DESC LIMIT 50", 
+            "SELECT * FROM downloads WHERE user_id = ? ORDER BY timestamp DESC, id DESC LIMIT 5", 
             (user['id'],)
         ).fetchall()
         
-        downloads = [dict(d) for d in downloads_rows]
-        
-        # Calculate stats
-        total_count = len(downloads)
-        latest_download = downloads[0] if total_count > 0 else None
+        recent_downloads = [dict(d) for d in downloads_rows]
+        latest_download = recent_downloads[0] if recent_downloads else None
 
         conn.close()
         
-        return render_template('profile.html', user=user, downloads=downloads, total_downloads=total_count, latest_download=latest_download)
+        return render_template('profile.html', user=user, recent_downloads=recent_downloads, total_downloads=total_downloads, latest_download=latest_download, stats=stats)
     except Exception as e:
         print(f"[Profile Error] Failed to load profile: {e}")
         flash("An error occurred while loading your profile.", "danger")

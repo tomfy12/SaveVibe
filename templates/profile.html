@@ -9,102 +9,316 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <style>
-        .profile-wrapper {
-            max-width: 500px;
+        /* Dashboard Layout */
+        .dashboard-container {
+            max-width: 1200px;
             margin: 40px auto;
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
             padding: 0 20px;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            align-items: start;
         }
+
         @media (max-width: 992px) {
-            .profile-wrapper { max-width: 100%; }
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
         }
-        
-        /* Profile Card Styles */
-        .profile-card {
+
+        /* Glassmorphism Card Base */
+        .dash-card {
             background: #17181c;
+            border-radius: 16px;
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            border-top: 5px solid #00d372;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             color: #fff;
+        }
+
+        /* Left Column: Profile Summary */
+        .profile-summary {
             text-align: center;
-            height: fit-content;
+            border-top: 5px solid #00d372;
         }
         .profile-avatar-large {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             background: linear-gradient(135deg, #00d372 0%, #0083b0 100%);
             color: #fff;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 40px;
+            font-size: 48px;
             font-weight: 700;
             margin: 0 auto 20px;
             box-shadow: 0 8px 20px rgba(0,211,114,0.3);
+            border: 4px solid #17181c;
         }
-        .profile-card h2 { margin-bottom: 5px; font-size: 24px; font-weight: 700; }
-        .profile-card p { color: #bbb; font-size: 14px; margin-bottom: 15px; }
-        .profile-stats {
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
-            display: grid;
-            grid-template-columns: 1fr;
+        .profile-summary h2 { margin-bottom: 5px; font-size: 26px; font-weight: 700; }
+        .profile-summary p { color: #aaa; font-size: 15px; margin-bottom: 15px; }
+        
+        .role-badge { 
+            display: inline-block;
+            background: rgba(0, 211, 114, 0.2); 
+            color: #00d372; 
+            padding: 4px 12px; 
+            border-radius: 6px; 
+            font-size: 13px; 
+            font-weight: 600; 
+            border: 1px solid rgba(0, 211, 114, 0.3); 
+            margin-bottom: 25px;
+        }
+
+        .summary-stats {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
             gap: 15px;
             text-align: left;
+            margin-bottom: 25px;
         }
-        .stat-item h5 { color: #888; font-size: 12px; font-weight: 500; text-transform: uppercase; margin-bottom: 5px; }
-        .stat-item p { color: #fff; font-size: 16px; font-weight: 600; margin: 0; }
-        
-        /* History Card Styles */
-        .history-card {
-            background: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            border-top: 5px solid #ffcc00;
-        }
-        .history-header {
+        .summary-stat-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 10px;
+        }
+        .summary-stat-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .summary-stat-item span.label {
+            color: #888;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .summary-stat-item span.value {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn-edit-profile { 
+            display: block; 
+            width: 100%; 
+            padding: 12px; 
+            background: transparent; 
+            border: 1px solid #333; 
+            color: #fff; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-weight: 600;
+            transition: all 0.3s ease; 
+        }
+        .btn-edit-profile:hover { 
+            background: rgba(255,255,255,0.05); 
+            border-color: #00d372;
+            color: #00d372;
+        }
+
+        /* Right Column */
+        .dashboard-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .card-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .card-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-header h3 i { color: #00d372; }
+
+        /* Card 1: Statistics */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        .stat-box {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid rgba(255,255,255,0.02);
+            transition: transform 0.3s ease;
+        }
+        .stat-box:hover {
+            transform: translateY(-3px);
+            border-color: rgba(0,211,114,0.3);
+        }
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .icon-total { background: rgba(0, 211, 114, 0.1); color: #00d372; }
+        .icon-mp4 { background: rgba(52, 152, 219, 0.1); color: #3498db; }
+        .icon-mp3 { background: rgba(155, 89, 182, 0.1); color: #9b59b6; }
+        .icon-hd { background: rgba(241, 196, 15, 0.1); color: #f1c40f; }
+        
+        .stat-info h4 { margin: 0; font-size: 24px; font-weight: 700; color: #fff; }
+        .stat-info p { margin: 2px 0 0; font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Card 2: Recent History */
+        .recent-downloads {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .download-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.03);
+            transition: background 0.2s;
+        }
+        .download-item:hover {
+            background: rgba(255,255,255,0.04);
+        }
+        .download-thumb {
+            width: 80px;
+            height: 45px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+        .download-details {
+            flex-grow: 1;
+            min-width: 0;
+        }
+        .download-details h5 {
+            margin: 0 0 5px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #ddd;
+        }
+        .download-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+        .download-meta span {
+            background: rgba(255,255,255,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .download-status {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .status-success { background: rgba(0, 211, 114, 0.15); color: #00d372; }
+        .btn-view-all {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #00d372;
+            color: #17181c;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            transition: 0.3s;
+        }
+        .btn-view-all:hover {
+            background: #00e67e;
+        }
+
+        /* Card 3: Account Info */
+        .account-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .info-group {
+            background: rgba(255,255,255,0.02);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .info-group label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .info-group p {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        /* Card 4: Quick Actions */
+        .actions-grid {
+            display: flex;
             flex-wrap: wrap;
             gap: 15px;
         }
-        .history-header h2 { color: #17181c; margin: 0; font-size: 22px; display: flex; align-items: center; gap: 10px; }
-        
-        .search-history {
-            position: relative;
-            width: 100%;
-            max-width: 300px;
+        .action-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 500;
+            transition: 0.3s;
+            border: 1px solid rgba(255,255,255,0.05);
         }
-        .search-history input {
-            width: 100%;
-            padding: 10px 15px 10px 40px;
-            border: 1px solid #e1e1e1;
-            border-radius: 6px;
-            outline: none;
-            font-size: 14px;
+        .action-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
         }
-        .search-history i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; }
+        .action-btn.danger { color: #ff4757; }
+        .action-btn.danger:hover { background: rgba(255, 71, 87, 0.1); border-color: rgba(255, 71, 87, 0.3); }
         
-        .history-table { width: 100%; border-collapse: collapse; }
-        .history-table th { padding: 15px; background: #f8f9fa; text-align: left; color: #555; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #eee; }
-        .history-table td { padding: 15px; border-bottom: 1px solid #eee; color: #444; font-size: 14px; vertical-align: middle; }
-        
-        .thumb-cell img { width: 60px; height: 40px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .title-cell { max-width: 250px; font-weight: 500; }
-        .title-cell span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #d4edda; color: #155724; }
-        
-        .btn-edit-profile { display: block; width: 100%; padding: 10px; background: transparent; border: 1px solid #333; color: #fff; border-radius: 6px; text-decoration: none; margin-top: 20px; transition: 0.3s; }
-        .btn-edit-profile:hover { background: rgba(255,255,255,0.05); }
+        .action-btn.admin { color: #f1c40f; }
+        .action-btn.admin:hover { background: rgba(241, 196, 15, 0.1); border-color: rgba(241, 196, 15, 0.3); }
+
+        .empty-history {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            font-style: italic;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
@@ -123,9 +337,9 @@
         {% endif %}
     {% endwith %}
 
-    <div class="profile-wrapper">
-        <!-- User Info Card (Left sidebar) -->
-        <div class="profile-card">
+    <div class="dashboard-container">
+        <!-- LEFT COLUMN: Profile Summary -->
+        <div class="dash-card profile-summary">
             <div class="profile-avatar-large">
                 {% if user.get('profile_picture') %}
                     <img src="{{ url_for('static', filename=user.get('profile_picture')) }}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
@@ -136,31 +350,156 @@
             <h2>{{ user['username'] }}</h2>
             <p>{{ user['email'] }}</p>
             
-            <div style="margin-top: 10px;">
-                <span class="role-badge" style="font-size: 13px; padding: 4px 12px;">{{ user['role'] | capitalize }}</span>
-            </div>
+            <span class="role-badge"><i class="fas fa-shield-alt"></i> {{ user['role'] | capitalize }}</span>
             
-            <div class="profile-stats">
-                <div class="stat-item">
-                    <h5>Member Since</h5>
-                    <p>{{ user['created_at'].split(' ')[0] if user['created_at'] else 'Unknown' }}</p>
+            <div class="summary-stats">
+                <div class="summary-stat-item">
+                    <span class="label">Member Since</span>
+                    <span class="value">{{ user['created_at'].split(' ')[0] if user['created_at'] else 'Unknown' }}</span>
                 </div>
-                <div class="stat-item">
-                    <h5>Total Downloads</h5>
-                    <p>{{ total_downloads }} videos</p>
+                <div class="summary-stat-item">
+                    <span class="label">Total Downloads</span>
+                    <span class="value">{{ total_downloads }}</span>
+                </div>
+                <div class="summary-stat-item">
+                    <span class="label">Favorite Format</span>
+                    <span class="value">{{ stats.favorite_format }}</span>
                 </div>
                 {% if latest_download %}
-                <div class="stat-item">
-                    <h5>Latest Download</h5>
-                    <p style="font-size: 13px; color: #00d372;">{{ latest_download['timestamp'] }}</p>
+                <div class="summary-stat-item">
+                    <span class="label">Last Download</span>
+                    <span class="value" style="color: #00d372;">{{ latest_download['timestamp'].split(' ')[0] }}</span>
                 </div>
                 {% endif %}
             </div>
             
-            <a href="javascript:void(0)" class="btn-edit-profile" onclick="openEditProfileModal()"><i class="fas fa-edit"></i> Edit Profile</a>
+            <a href="javascript:void(0)" class="btn-edit-profile" onclick="openEditProfileModal()"><i class="fas fa-user-edit"></i> Edit Profile</a>
         </div>
 
+        <!-- RIGHT COLUMN: Dashboard Cards -->
+        <div class="dashboard-content">
+            
+            <!-- Card 1: Statistics -->
+            <div class="dash-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-pie"></i> Download Statistics</h3>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-icon icon-total"><i class="fas fa-cloud-download-alt"></i></div>
+                        <div class="stat-info">
+                            <h4>{{ total_downloads }}</h4>
+                            <p>Total</p>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon icon-mp4"><i class="fas fa-video"></i></div>
+                        <div class="stat-info">
+                            <h4>{{ stats.mp4_count }}</h4>
+                            <p>MP4 Videos</p>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon icon-mp3"><i class="fas fa-music"></i></div>
+                        <div class="stat-info">
+                            <h4>{{ stats.mp3_count }}</h4>
+                            <p>MP3 Audio</p>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon icon-hd"><i class="fas fa-tv"></i></div>
+                        <div class="stat-info">
+                            <h4>{{ stats.hd_count }}</h4>
+                            <p>HD / 4K</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Card 2: Recent History -->
+            <div class="dash-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-history"></i> Recent Downloads</h3>
+                </div>
+                <div class="recent-downloads">
+                    {% if recent_downloads %}
+                        {% for item in recent_downloads %}
+                        <div class="download-item">
+                            <img src="{{ item['thumbnail_url'] }}" alt="Thumbnail" class="download-thumb">
+                            <div class="download-details">
+                                <h5>{{ item['video_title'] }}</h5>
+                                <div class="download-meta">
+                                    <span>{{ item['quality'] }}</span>
+                                    <span>{{ item['format'] | upper }}</span>
+                                    <span><i class="far fa-calendar-alt"></i> {{ item['timestamp'].split(' ')[0] }}</span>
+                                </div>
+                            </div>
+                            <div class="download-status status-success">
+                                <i class="fas fa-check-circle"></i> Done
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <div style="text-align: right;">
+                            <a href="{{ url_for('history') }}" class="btn-view-all">View Full History <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    {% else %}
+                        <div class="empty-history">
+                            <i class="fas fa-box-open" style="font-size: 24px; margin-bottom: 10px;"></i>
+                            <p>You haven't downloaded anything yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Card 3: Account Information -->
+            <div class="dash-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-address-card"></i> Account Information</h3>
+                </div>
+                <div class="account-info-grid">
+                    <div class="info-group">
+                        <label>Username</label>
+                        <p>{{ user['username'] }}</p>
+                    </div>
+                    <div class="info-group">
+                        <label>Email Address</label>
+                        <p>{{ user['email'] }}</p>
+                    </div>
+                    <div class="info-group">
+                        <label>Account Type</label>
+                        <p>{{ user['role'] | capitalize }} User</p>
+                    </div>
+                    <div class="info-group">
+                        <label>Member Since</label>
+                        <p>{{ user['created_at'] if user['created_at'] else 'Unknown' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4: Quick Actions -->
+            <div class="dash-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                </div>
+                <div class="actions-grid">
+                    <a href="{{ url_for('history') }}" class="action-btn">
+                        <i class="fas fa-history"></i> Download History
+                    </a>
+                    <a href="javascript:void(0)" class="action-btn" onclick="openEditProfileModal()">
+                        <i class="fas fa-user-edit"></i> Edit Profile
+                    </a>
+                    {% if user.get('role') == 'admin' %}
+                    <a href="{{ url_for('admin') }}" class="action-btn admin">
+                        <i class="fas fa-cogs"></i> Admin Panel
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="action-btn danger">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <!-- Edit Profile Modal -->
@@ -246,30 +585,6 @@
                     document.querySelector('.btn-remove-avatar').style.display = 'none';
                 }
                 reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function filterHistory() {
-            var input, filter, table, tr, td, i, txtValue;
-            input = document.getElementById("historySearch");
-            filter = input.value.toUpperCase();
-            table = document.getElementById("historyTable");
-            
-            if (!table) return;
-            
-            tr = table.getElementsByTagName("tr");
-
-            for (i = 1; i < tr.length; i++) {
-                // target column index 2 which is Video Title
-                td = tr[i].getElementsByTagName("td")[2]; 
-                if (td) {
-                    txtValue = td.textContent || td.innerText;
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        tr[i].style.display = "";
-                    } else {
-                        tr[i].style.display = "none";
-                    }
-                }       
             }
         }
     </script>

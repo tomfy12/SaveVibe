@@ -260,6 +260,11 @@ body { display: flex; flex-direction: column; min-height: 100vh; width: 100%; }
     .navbar-section .auth-buttons { flex-direction: column; width: 100%; margin: 0; }
     .navbar-section .btn-login, .navbar-section .btn-signup { width: 100%; }
 
+    /* Profile Dropdown Mobile */
+    .navbar-section .profile-dropdown-container { width: 100%; display: flex; flex-direction: column; align-items: center; }
+    .navbar-section .profile-dropdown-menu { position: static; width: 100%; max-width: 300px; margin-top: 15px; box-shadow: none; border: none; background: rgba(255, 255, 255, 0.05); display: none; transform: none; visibility: visible; opacity: 1; transition: none; }
+    .navbar-section .profile-dropdown-menu.active { display: block; transform: none; }
+
     /* Admin Sidebar */
     .admin-mobile-toggle { display: block; }
     .admin-layout { flex-direction: column; }
