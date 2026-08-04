@@ -55,7 +55,7 @@
                     </tr>
                     {% for d in downloads_list %}
                     <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 15px;">{{ d['id'] }}</td>
+                        <td style="padding: 15px;">{{ loop.index }}</td>
                         <td style="padding: 15px; font-weight: bold; color: #00d372;">{{ d['username'] }}</td>
                         <td style="padding: 15px; color: #333;">{{ d['video_title'] }}</td>
                         <td style="padding: 15px; color: #666;">{{ d['timestamp'] }}</td>
@@ -69,6 +69,7 @@
             </div>
         </div>
 
+        {% include '_footer.html' %}
     </div>
 </body>
 </html>

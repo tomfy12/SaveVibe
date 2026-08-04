@@ -12,6 +12,7 @@ import yt_dlp
 import requests
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 import shutil
 
@@ -82,6 +83,32 @@ def init_db():
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    
+    # Run migrations safely for new download history columns
+    try:
+        cursor.execute("ALTER TABLE downloads ADD COLUMN user_id INTEGER")
+    except sqlite3.OperationalError:
+        pass # Column exists
+    try:
+        cursor.execute("ALTER TABLE downloads ADD COLUMN format TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE downloads ADD COLUMN file_size TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE downloads ADD COLUMN status TEXT DEFAULT 'Completed'")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE downloads ADD COLUMN thumbnail TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE downloads ADD COLUMN os_device TEXT DEFAULT 'Unknown'")
+    except sqlite3.OperationalError:
+        pass
     
     # Check for old default admin and new default admin
     old_admin = cursor.execute("SELECT * FROM users WHERE username = 'admin'").fetchone()
@@ -206,16 +233,99 @@ def get_yt_dlp_options(format_type='mp4', custom_filename=None):
 
     return ydl_opts
 
-def log_download_db(title):
-    """Logs download title into SQLite DB."""
+def parse_os_device(ua_string):
+    """Safely parses user-agent string for OS and device brand."""
+    if not ua_string:
+        return "Unknown Device"
+    
+    ua_lower = ua_string.lower()
+    
+    # OS Detection
+    os_name = "Unknown"
+    if 'android' in ua_lower:
+        os_name = "Android"
+    elif 'iphone' in ua_lower or 'ipad' in ua_lower:
+        os_name = "iOS"
+    elif 'windows' in ua_lower:
+        os_name = "Windows"
+    elif 'mac os' in ua_lower or 'macos' in ua_lower:
+        os_name = "macOS"
+    elif 'linux' in ua_lower:
+        os_name = "Linux"
+    elif 'cros' in ua_lower:
+        os_name = "ChromeOS"
+        
+    # Device Detection
+    device = "Unknown"
+    if os_name in ["Windows", "macOS", "Linux", "ChromeOS"]:
+        device = "Desktop"
+    elif 'ipad' in ua_lower or 'tablet' in ua_lower:
+        device = "Tablet"
+    elif 'iphone' in ua_lower:
+        device = "iPhone"
+    else:
+        if 'samsung' in ua_lower or 'sm-' in ua_lower:
+            device = "Samsung"
+        elif 'xiaomi' in ua_lower or 'mi ' in ua_lower or 'redmi' in ua_lower or 'poco' in ua_lower:
+            device = "Xiaomi"
+        elif 'vivo' in ua_lower:
+            device = "Vivo"
+        elif 'oppo' in ua_lower:
+            device = "Oppo"
+        elif 'oneplus' in ua_lower:
+            device = "OnePlus"
+        elif 'pixel' in ua_lower:
+            device = "Google Pixel"
+        elif 'huawei' in ua_lower:
+            device = "Huawei"
+        elif 'realme' in ua_lower:
+            device = "Realme"
+        elif 'motorola' in ua_lower or 'moto ' in ua_lower:
+            device = "Motorola"
+        elif os_name == "Android":
+            device = "Mobile"
+
+    if os_name == "Unknown" and device == "Unknown":
+        return "Unknown Device"
+    if device == "Unknown":
+        return os_name
+    return f"{os_name} • {device}"
+
+def log_download_db(title, format_type='Unknown', file_size='Unknown', thumbnail=''):
+    """Logs download title into SQLite DB with local timezone."""
     try:
         username = session.get('username', 'Guest')
+        user_id = session.get('user_id', None)
+        
+        # Use local timezone via python's datetime.now()
+        local_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO downloads (username, video_title) VALUES (?, ?)",
-            (username, title)
-        )
+        
+        # Extract OS/Device
+        ua_string = request.user_agent.string if request else ""
+        os_device = parse_os_device(ua_string)
+        
+        # We try to insert with new columns. If it fails, fallback to old schema (safety measure).
+        try:
+            cursor.execute(
+                "INSERT INTO downloads (username, video_title, timestamp, user_id, format, file_size, thumbnail, status, os_device) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (username, title, local_time, user_id, format_type, file_size, thumbnail, 'Completed', os_device)
+            )
+        except sqlite3.OperationalError:
+            # Fallback if migration hasn't completed or some error occurs
+            try:
+                cursor.execute(
+                    "INSERT INTO downloads (username, video_title, timestamp, user_id, format, file_size, thumbnail, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (username, title, local_time, user_id, format_type, file_size, thumbnail, 'Completed')
+                )
+            except sqlite3.OperationalError:
+                cursor.execute(
+                    "INSERT INTO downloads (username, video_title, timestamp) VALUES (?, ?, ?)",
+                    (username, title, local_time)
+                )
+            
         conn.commit()
         conn.close()
     except Exception as db_err:
@@ -334,7 +444,8 @@ def download():
     if video_id:
         try:
             download_url, video_title = fetch_rapidapi_download_url(video_id, format_type=format_type)
-            log_download_db(video_title)
+            # Log RapidAPI download (thumbnail/size might not be available)
+            log_download_db(title=video_title, format_type=format_type.upper(), file_size='Unknown', thumbnail=f'https://i.ytimg.com/vi/{video_id}/mqdefault.jpg')
 
             response = redirect(download_url)
             if download_token:
@@ -359,7 +470,12 @@ def download():
                 raise ValueError("Could not resolve media stream URL.")
 
             video_title = info.get('title', 'SaveVibe_Media')
-            log_download_db(video_title)
+            thumbnail = info.get('thumbnail', f'https://i.ytimg.com/vi/{video_id}/mqdefault.jpg' if video_id else '')
+            # Attempt to grab filesize
+            filesize = info.get('filesize') or info.get('filesize_approx')
+            filesize_str = f"{round(filesize / (1024 * 1024), 2)} MB" if filesize else "Unknown"
+            
+            log_download_db(title=video_title, format_type=format_type.upper(), file_size=filesize_str, thumbnail=thumbnail)
 
             response = redirect(stream_url)
             if download_token:
@@ -475,6 +591,8 @@ def login():
             session['user_id'] = user['id']
             session['username'] = user['username']
             session['role'] = user['role']
+            session['email'] = user['email']
+            session['created_at'] = user['created_at']
             # Implement remember me by setting session to permanent
             if remember:
                 session.permanent = True
@@ -557,10 +675,19 @@ def profile():
         session.clear()
         return redirect(url_for('login'))
         
-    downloads = conn.execute("SELECT * FROM downloads WHERE username = ? ORDER BY id DESC LIMIT 50", (user['username'],)).fetchall()
+    # Get only the user's downloads using user_id if available, fallback to username matching
+    downloads = conn.execute(
+        "SELECT * FROM downloads WHERE user_id = ? OR (user_id IS NULL AND username = ?) ORDER BY id DESC LIMIT 50", 
+        (user['id'], user['username'])
+    ).fetchall()
+    
+    # Calculate stats
+    total_count = len(downloads)
+    latest_download = downloads[0] if total_count > 0 else None
+
     conn.close()
     
-    return render_template('profile.html', user=user, downloads=downloads)
+    return render_template('profile.html', user=user, downloads=downloads, total_downloads=total_count, latest_download=latest_download)
 
 # --- RESTful API ENDPOINTS ---
 
@@ -646,7 +773,10 @@ def api_download():
             if not stream_url:
                 return jsonify({'error': 'Failed to extract stream URL'}), 500
 
-            log_download_db(video_title)
+            thumbnail = info.get('thumbnail', '')
+            filesize = info.get('filesize') or info.get('filesize_approx')
+            filesize_str = f"{round(filesize / (1024 * 1024), 2)} MB" if filesize else "Unknown"
+            log_download_db(title=video_title, format_type=ext.upper(), file_size=filesize_str, thumbnail=thumbnail)
 
             req = requests.get(stream_url, stream=True, timeout=15)
             clean_name = f"{sanitize_filename(video_title)}.{ext}"

@@ -70,8 +70,7 @@
                 {% if session.get('role') == 'admin' %}
                     <a href="/admin">Admin Panel</a>
                 {% endif %}
-                <a href="/profile">Profile</a>
-                <a href="/logout">Logout</a>
+                {% include '_navbar_profile.html' %}
             {% else %}
                 <div class="auth-buttons">
                     <a href="javascript:void(0)" class="btn-login" onclick="openAuthModal('login')">Login</a>
@@ -206,5 +205,6 @@
     
     <!-- Auth Modal Include -->
     {% include '_auth_modal.html' %}
+    {% include '_footer.html' %}
 </body>
 </html>
