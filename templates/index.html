@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SaveVibe.com - YouTube Video Downloader</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2.0">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <style>
@@ -43,12 +43,16 @@
     <!-- Reusable Macro -->
     {% macro feature_card(title, link="#", is_coming_soon=false) %}
         <a href="{{ is_coming_soon and '#' or link }}" class="feature-card {% if is_coming_soon %}disabled-card{% endif %}">
-            <div class="icon-box"><i class="fab fa-youtube"></i></div>
-            <div class="card-text">
-                <h3>{{ title }}</h3>
-                {% if is_coming_soon %} <span class="badge-coming-soon">Coming Soon</span> {% endif %}
+            <div class="card-content">
+                <div class="card-top">
+                    <div class="icon-box"><i class="fab fa-youtube"></i></div>
+                    <i class="fas fa-arrow-right arrow-icon {% if is_coming_soon %}disabled-arrow{% endif %}"></i>
+                </div>
+                <div class="card-text">
+                    <h3>{{ title }}</h3>
+                    {% if is_coming_soon %} <span class="badge-coming-soon">Coming Soon</span> {% endif %}
+                </div>
             </div>
-            <i class="fas fa-arrow-right arrow-icon {% if is_coming_soon %}disabled-arrow{% endif %}"></i>
         </a>
     {% endmacro %}
 
