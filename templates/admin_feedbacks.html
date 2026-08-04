@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Visitor Feedbacks - SaveVibe</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <style>
+        body { margin: 0; background: #f4f6f9; font-family: 'Poppins', sans-serif; display: flex; }
+        .admin-sidebar { width: 260px; background: #17181c; color: white; height: 100vh; position: fixed; top: 0; left: 0; padding: 30px 20px; display: flex; flex-direction: column; }
+        .sidebar-brand { font-size: 24px; font-weight: 700; margin-bottom: 40px; text-align: center; }
+        .sidebar-menu { list-style: none; padding: 0; flex: 1; }
+        .sidebar-menu li { margin-bottom: 15px; }
+        .sidebar-menu a { color: #bbb; text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 8px; font-size: 15px; transition: 0.2s; }
+        .sidebar-menu a:hover, .sidebar-menu a.active { background: #00d372; color: white; }
+        .admin-main { margin-left: 260px; flex: 1; padding: 40px; }
+    </style>
+</head>
+<body>
+    <!-- નવું અપડેટ કરેલું Sidebar -->
+    <div class="admin-sidebar">
+        <div class="sidebar-brand"><span style="color: #fbe602;">Save</span><span style="color: white;">Vibe</span></div>
+        <ul class="sidebar-menu">
+            <li><a href="{{ url_for('admin_panel') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin_downloads') }}"><i class="fas fa-download"></i> Total Downloads</a></li>
+            <li><a href="{{ url_for('admin_feedbacks') }}" class="active"><i class="fas fa-comments"></i> Visitor Feedbacks</a></li>
+            <li><a href="{{ url_for('home') }}"><i class="fas fa-home"></i> View Website</a></li>
+        </ul>
+    </div>
+
+    <div class="admin-main">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h1 style="color: #17181c; font-size: 28px;">💬 Visitor Feedbacks</h1>
+            <a href="{{ url_for('logout') }}" style="background: #ff4757; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 500;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+
+        <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <tr style="background: #17181c; color: white;">
+                    <th style="padding: 15px;">ID</th>
+                    <th style="padding: 15px;">Name</th>
+                    <th style="padding: 15px;">Email</th>
+                    <th style="padding: 15px;">Message</th>
+                    <th style="padding: 15px;">Time</th>
+                </tr>
+                {% for f in feedbacks_list %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 15px;">{{ f['id'] }}</td>
+                    <td style="padding: 15px; font-weight: bold; color: #ff8c00;">{{ f['name'] }}</td>
+                    <td style="padding: 15px; color: #666;">{{ f['email'] }}</td>
+                    <td style="padding: 15px; color: #333; max-width: 300px; word-wrap: break-word;">{{ f['message'] }}</td>
+                    <td style="padding: 15px; color: #888;">{{ f['timestamp'] }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="padding: 15px; text-align: center; color: #888;">No feedbacks received yet.</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</body>
+</html>

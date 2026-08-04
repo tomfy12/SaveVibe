@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaveVibe.com - YouTube Video Downloader</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <style>
+        /* Flash Alert Container */
+        .alert-box { position: relative; padding: 12px 45px 12px 15px; background-color: #1e90ff; color: white; border-radius: 6px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .alert-box.alert-danger { background-color: #ff3333; }
+        .alert-box.alert-success { background-color: #2ed573; }
+        .alert-box.alert-warning { background-color: #ffa502; }
+        .alert-box.alert-info { background-color: #1e90ff; }
+        .close-alert-btn { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: white; font-size: 20px; font-weight: bold; cursor: pointer; opacity: 0.8; transition: 0.2s; }
+        .close-alert-btn:hover { opacity: 1; transform: translateY(-50%) scale(1.15); }
+        
+        .badge-coming-soon { display: inline-block; font-size: 11px; font-weight: 600; color: #ff9800; background: #fff3e0; padding: 2px 8px; border-radius: 12px; margin-top: 4px; border: 1px solid #ffe0b2; }
+        .feature-card.disabled-card { cursor: not-allowed; opacity: 0.85; }
+
+        /* Navbar Simple Alignment */
+        .nav-menu {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .nav-menu a:hover, .nav-menu a.active {
+            color: #ffcc00;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Reusable Macro -->
+    {% macro feature_card(title, link="#", is_coming_soon=false) %}
+        <a href="{{ is_coming_soon and '#' or link }}" class="feature-card {% if is_coming_soon %}disabled-card{% endif %}">
+            <div class="icon-box"><i class="fab fa-youtube"></i></div>
+            <div class="card-text">
+                <h3>{{ title }}</h3>
+                {% if is_coming_soon %} <span class="badge-coming-soon">Coming Soon</span> {% endif %}
+            </div>
+            <i class="fas fa-arrow-right arrow-icon {% if is_coming_soon %}disabled-arrow{% endif %}"></i>
+        </a>
+    {% endmacro %}
+
+    <!-- Cleaned Navbar without Login/Signup -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/" class="logo-link">
+                <span class="logo-yellow">Save</span><span class="logo-white">Vibe.com</span>
+            </a>
+        </div>
+        <div class="nav-menu">
+            <a href="/" class="active">Home</a>
+            <a href="/about">About Us</a>
+            <a href="/contact">Contact Us</a>
+        </div>
+    </nav>
+
+    <!-- Flash Messages Section -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container" style="margin-top: 20px; transition: all 0.3s ease;" id="flashContainer">
+                {% for category, message in messages %}
+                    <div class="alert-box alert-{{ category }}" id="flash-msg-{{ loop.index }}">
+                        <span>{{ message }}</span>
+                        <button type="button" class="close-alert-btn" onclick="closeAlert('flash-msg-{{ loop.index }}')">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title"><span class="text-yellow">Save</span><span class="text-white">Vibe.com</span></h1>
+            <h2 class="hero-subtitle">YouTube Video Downloader</h2>
+            <p class="hero-desc">Download YouTube Videos Online Free</p>
+
+            <form action="/download" method="POST" class="search-box" id="downloadForm">
+                <i class="fas fa-globe search-icon"></i>
+                <input type="text" name="url" placeholder="Paste YouTube video link" required>
+                <select name="format" class="format-select">
+                    <option value="1080">Video 1080p (Full HD)</option>
+                    <option value="720" selected>Video 720p (HD)</option>
+                    <option value="480">Video 480p (SD)</option>
+                    <option value="360">Video 360p</option>
+                    <option value="audio">Audio Only (MP3)</option>
+                </select>
+                <button type="submit" class="btn-download"><i class="fas fa-arrow-down"></i> Download</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="about">
+        <div class="container">
+            <div class="grid-container">
+                {{ feature_card('YouTube Video Downloader', link='#', is_coming_soon=false) }}
+                {{ feature_card('YouTube Shorts Downloader', is_coming_soon=true) }}
+                {{ feature_card('YouTube to MP3', is_coming_soon=true) }}
+                {{ feature_card('YouTube Audio Downloader', is_coming_soon=true) }}
+                {{ feature_card('YouTube Music Downloader', is_coming_soon=true) }}
+                {{ feature_card('YouTube Movies', is_coming_soon=true) }}
+            </div>
+        </div>
+    </section>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="loader-box">
+            <h3>Downloading HD Video...</h3>
+            <p>Please wait, processing audio & video merging.</p>
+            <div class="progress-container"><div class="progress-bar"></div></div>
+        </div>
+    </div>
+
+    <script>
+        // Flash Alert Functions
+        function closeAlert(elementId) {
+            const alertBox = document.getElementById(elementId);
+            const flashContainer = document.getElementById('flashContainer');
+            if (alertBox) {
+                alertBox.style.opacity = "0"; alertBox.style.transform = "scale(0.95)";
+                setTimeout(() => {
+                    alertBox.remove();
+                    if (flashContainer && flashContainer.children.length === 0) flashContainer.style.display = "none";
+                }, 200);
+            }
+        }
+
+        // Downloader Loader with Auto-Hide & Refresh Logic
+        document.getElementById('downloadForm').onsubmit = function(e) {
+            const form = this;
+            const overlay = document.getElementById('loadingOverlay');
+            
+            // એક નવો યુનિક ટોકન બનાવો
+            const token = new Date().getTime().toString();
+            
+            // ફોર્મમાં છુપી રીતે ટોકન એડ કરો
+            let tokenInput = document.getElementById('download_token');
+            if (!tokenInput) {
+                tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'download_token';
+                tokenInput.id = 'download_token';
+                form.appendChild(tokenInput);
+            }
+            tokenInput.value = token;
+
+            // લોડિંગ સ્ક્રીન બતાવો
+            overlay.style.display = 'flex';
+
+            // દર 1 સેકન્ડે ચેક કરો કે પાયથોન સર્વરથી ફાઈલ આવી ગઈ છે કે નહિ
+            const checkCookie = setInterval(function() {
+                if (document.cookie.indexOf('downloadToken=' + token) !== -1) {
+                    
+                    // 1. લોડિંગ બંધ કરો
+                    overlay.style.display = 'none';
+                    clearInterval(checkCookie);
+                    
+                    // 2. કુકી ક્લીન કરી દો
+                    document.cookie = "downloadToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+                    // 3. પેજને તાત્કાલિક "Fresh" દેખાડવા માટે ઇનપુટ બોક્સ ખાલી કરી દો
+                    form.reset();
+
+                    // 4. બ્રાઉઝરને ડાઉનલોડ પકડવા 5 સેકન્ડનો ટાઈમ આપીને પછી જ પેજ રીફ્રેશ કરો
+                    setTimeout(function() {
+                        window.location.href = window.location.pathname; 
+                    }, 5000); // 5000ms = 5 seconds delay
+                }
+            }, 1000); 
+            
+            // બેકઅપ ટાઈમઆઉટ 
+            setTimeout(() => { 
+                overlay.style.display = 'none'; 
+                clearInterval(checkCookie);
+            }, 90000); 
+        };
+    </script>
+</body>
+</html>

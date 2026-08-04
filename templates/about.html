@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - SaveVibe</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/" class="logo-link">
+                <span class="logo-yellow">Save</span><span class="logo-white">Vibe.com</span>
+            </a>
+        </div>
+        <div class="nav-menu">
+            <a href="/">Home</a>
+            <a href="/about" class="active">About Us</a>
+            <a href="/contact">Contact Us</a>
+        </div>
+    </nav>
+
+    <div class="page-card">
+        <h1><i class="fas fa-info-circle icon-blue"></i> About SaveVibe</h1>
+        <p>
+            Welcome to <strong>SaveVibe.com</strong>, your ultimate destination for fast, secure, and high-quality
+            YouTube video and audio downloading. Our mission is to provide users with a seamless, hassle-free platform
+            to save their favorite media content directly to their devices.
+        </p>
+        <p>
+            Whether you want to watch videos offline, extract MP3 audio files, or keep track of your download history,
+            SaveVibe is built with modern technology to ensure top-notch performance and security.
+        </p>
+        <a href="/" class="btn-back">&larr; Back to Home</a>
+    </div>
+
+    <script>
+        // Detect page refresh event using browser performance entry
+        const entries = performance.getEntriesByType("navigation");
+        if (entries.length > 0 && entries[0].type === "reload") {
+            // Redirect to Home Page on refresh
+            window.location.href = "/";
+        }
+    </script>
+</body>
+
+</html>

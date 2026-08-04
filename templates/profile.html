@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - SaveVibe.com</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/" class="logo-link"><span class="logo-yellow">Save</span><span class="logo-white">Vibe.com</span></a>
+        </div>
+        <div class="nav-menu">
+            <a href="/">Home</a>
+            <a href="/about">About Us</a>
+            <a href="/contact">Contact Us</a>
+            
+            {% if session.get('user') or session.get('username') %}
+                {% set u_name = session.get('username') or session.get('user') %}
+                <div class="settings-dropdown">
+                    <button class="profile-btn" onclick="toggleMenu('profileMenu')">
+                        <div class="nav-avatar">{{ u_name[0] | upper }}</div>
+                        <span>{{ u_name }}</span> <i class="fas fa-caret-down"></i>
+                    </button>
+                    <div class="dropdown-content" id="profileMenu">
+                        <a href="/profile"><i class="fas fa-history"></i> Download History</a>
+                        <a href="/logout" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="profile-container" style="max-width: 900px; margin: 40px auto; padding: 30px; background: #fff; border-radius: 12px;">
+        <h1><i class="fas fa-history"></i> Download History</h1>
+        {% if downloads %}
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                    <tr style="background: #f8f9fa;"><th style="padding: 12px;">#</th><th style="padding: 12px;">Video Title</th><th style="padding: 12px;">Date & Time</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in downloads %}
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 12px;">{{ loop.index }}</td>
+                            <td style="padding: 12px;">{{ item.video_title }}</td>
+                            <td style="padding: 12px;">{{ item.timestamp }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="text-align: center; color: #666; margin-top: 20px;">No download history found.</p>
+        {% endif %}
+        <div style="margin-top: 20px;"><a href="/"><i class="fas fa-arrow-left"></i> Back to Home</a></div>
+    </div>
+
+    <script>
+        window.history.pushState(null, "", window.location.href);
+        window.onpopstate = function () {
+            window.history.pushState(null, "", window.location.href);
+            window.location.href = "/";
+        };
+
+        function toggleMenu(menuId) {
+            const menu = document.getElementById(menuId);
+            document.querySelectorAll('.dropdown-content').forEach(d => { if (d.id !== menuId) d.classList.remove('show-menu'); });
+            menu.classList.toggle("show-menu");
+        }
+        window.onclick = function(event) {
+            if (!event.target.closest('.profile-btn')) {
+                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show-menu'));
+            }
+        };
+    </script>
+</body>
+</html>
