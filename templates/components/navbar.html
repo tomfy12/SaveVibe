@@ -13,9 +13,7 @@
             <a href="/about">About Us</a>
             <a href="/contact">Contact Us</a>
             {% if session.get('user_id') %}
-                {% if session.get('role') == 'admin' %}
-                    <a href="/admin">Admin Panel</a>
-                {% endif %}
+
                 {% include '_navbar_profile.html' %}
             {% else %}
                 <div class="auth-buttons">

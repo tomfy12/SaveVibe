@@ -126,7 +126,13 @@
     <div class="profile-wrapper">
         <!-- User Info Card (Left sidebar) -->
         <div class="profile-card">
-            <div class="profile-avatar-large">{{ user['username'][0].upper() }}</div>
+            <div class="profile-avatar-large">
+                {% if user.get('profile_picture') %}
+                    <img src="{{ url_for('static', filename=user.get('profile_picture')) }}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                {% else %}
+                    {{ user['username'][0].upper() }}
+                {% endif %}
+            </div>
             <h2>{{ user['username'] }}</h2>
             <p>{{ user['email'] }}</p>
             
@@ -151,7 +157,7 @@
                 {% endif %}
             </div>
             
-            <a href="javascript:void(0)" class="btn-edit-profile disabled-link"><i class="fas fa-edit"></i> Edit Profile</a>
+            <a href="javascript:void(0)" class="btn-edit-profile" onclick="openEditProfileModal()"><i class="fas fa-edit"></i> Edit Profile</a>
         </div>
 
         <!-- Download History Card (Main content) -->
@@ -210,7 +216,92 @@
         </div>
     </div>
 
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="editProfileModalOverlay" onclick="closeEditProfileModal(event)">
+        <div class="modal-content profile-modal-content">
+            <span class="close-modal" onclick="closeEditProfileModal()">&times;</span>
+            <div class="modal-header">
+                <h2>Edit Profile</h2>
+                <p>Update your personal information</p>
+            </div>
+            
+            <form action="{{ url_for('update_profile') }}" method="POST" enctype="multipart/form-data" class="edit-profile-form">
+                <div class="avatar-upload-container">
+                    <div class="current-avatar">
+                        {% if user.get('profile_picture') %}
+                            <img src="{{ url_for('static', filename=user.get('profile_picture')) }}" alt="Current Avatar" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+                        {% else %}
+                            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #00d372 0%, #0083b0 100%); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700;">{{ user['username'][0].upper() }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="avatar-actions">
+                        <label for="profile_picture" class="btn-upload-avatar"><i class="fas fa-camera"></i> Upload New Photo</label>
+                        <input type="file" id="profile_picture" name="profile_picture" accept="image/*" style="display: none;" onchange="previewAvatar(this)">
+                        <button type="submit" name="action" value="remove_photo" class="btn-remove-avatar" {% if not user.get('profile_picture') %}style="display:none;"{% endif %}>Remove Photo</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Full Name / Username</label>
+                    <div class="input-container">
+                        <i class="fas fa-user"></i>
+                        <input type="text" name="username" value="{{ user['username'] }}" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <div class="input-container">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" name="email" value="{{ user['email'] }}" required>
+                    </div>
+                </div>
+
+                <div class="form-group readonly-group">
+                    <label>Role</label>
+                    <div class="input-container">
+                        <i class="fas fa-shield-alt"></i>
+                        <input type="text" value="{{ user['role'] | capitalize }}" disabled>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-submit-modal">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
     <script>
+        function openEditProfileModal() {
+            document.getElementById('editProfileModalOverlay').classList.add('active');
+        }
+
+        function closeEditProfileModal(event) {
+            // Close if clicking the X or outside the modal content
+            if (!event || event.target.id === 'editProfileModalOverlay' || event.target.className === 'close-modal') {
+                document.getElementById('editProfileModalOverlay').classList.remove('active');
+            }
+        }
+        
+        // Close on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                document.getElementById('editProfileModalOverlay').classList.remove('active');
+            }
+        });
+
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var container = document.querySelector('.current-avatar');
+                    container.innerHTML = '<img src="' + e.target.result + '" alt="Preview" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">';
+                    // Hide the remove button if uploading a new photo
+                    document.querySelector('.btn-remove-avatar').style.display = 'none';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
         function filterHistory() {
             var input, filter, table, tr, td, i, txtValue;
             input = document.getElementById("historySearch");

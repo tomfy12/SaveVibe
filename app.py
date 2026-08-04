@@ -12,6 +12,7 @@ import yt_dlp
 import requests
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime
 
 import shutil
@@ -29,9 +30,11 @@ app.config['SECRET_KEY'] = 'savevibe-super-secret-key-2026'
 # Directories Setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DOWNLOAD_FOLDER = os.path.join(BASE_DIR, 'downloads')
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 DB_PATH = os.path.join(BASE_DIR, 'savevibe.db')
 COOKIE_FILE = os.path.join(BASE_DIR, 'cookies.txt')
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Automatically write YOUTUBE_COOKIES environment variable to cookies.txt if provided on Render
 if os.environ.get('YOUTUBE_COOKIES'):
@@ -107,6 +110,11 @@ def init_db():
         pass
     try:
         cursor.execute("ALTER TABLE downloads ADD COLUMN os_device TEXT DEFAULT 'Unknown'")
+    except sqlite3.OperationalError:
+        pass
+    
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN profile_picture TEXT")
     except sqlite3.OperationalError:
         pass
     
@@ -593,6 +601,13 @@ def login():
             session['role'] = user['role']
             session['email'] = user['email']
             session['created_at'] = user['created_at']
+            
+            # Use dictionary access to avoid KeyError if schema migration hasn't loaded in older rows properly
+            # sqlite3.Row supports .keys() to safely check
+            if 'profile_picture' in user.keys():
+                session['profile_picture'] = user['profile_picture']
+            else:
+                session['profile_picture'] = None
             # Implement remember me by setting session to permanent
             if remember:
                 session.permanent = True
@@ -688,6 +703,63 @@ def profile():
     conn.close()
     
     return render_template('profile.html', user=user, downloads=downloads, total_downloads=total_count, latest_download=latest_download)
+
+@app.route('/update_profile', methods=['POST'])
+@login_required
+def update_profile():
+    """Handles Profile Update and Avatar Uploads."""
+    username = request.form.get('username', '').strip()
+    email = request.form.get('email', '').strip()
+    action = request.form.get('action', '') # check if 'remove_photo'
+
+    if not username or not email:
+        flash("Username and Email are required.", "danger")
+        return redirect(url_for('profile'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Check if username or email is taken by another user
+    existing_user = cursor.execute("SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?", (username, email, session['user_id'])).fetchone()
+    if existing_user:
+        flash("Username or Email is already taken.", "danger")
+        conn.close()
+        return redirect(url_for('profile'))
+
+    # Handle profile picture
+    profile_picture = session.get('profile_picture')
+    
+    if action == 'remove_photo':
+        profile_picture = None
+    else:
+        file = request.files.get('profile_picture')
+        if file and file.filename:
+            filename = secure_filename(file.filename)
+            unique_filename = f"{uuid.uuid4().hex}_{filename}"
+            filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+            file.save(filepath)
+            profile_picture = f"uploads/{unique_filename}"
+
+    try:
+        cursor.execute(
+            "UPDATE users SET username = ?, email = ?, profile_picture = ? WHERE id = ?",
+            (username, email, profile_picture, session['user_id'])
+        )
+        conn.commit()
+        
+        # Update session
+        session['username'] = username
+        session['email'] = email
+        session['profile_picture'] = profile_picture
+        
+        flash("Profile updated successfully!", "success")
+    except Exception as e:
+        print(f"[DB Error] Failed to update profile: {e}")
+        flash("Failed to update profile.", "danger")
+    finally:
+        conn.close()
+        
+    return redirect(url_for('profile'))
 
 # --- RESTful API ENDPOINTS ---
 

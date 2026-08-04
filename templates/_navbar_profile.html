@@ -1,11 +1,21 @@
 <!-- Navbar Profile Dropdown -->
 <div class="profile-dropdown-container" id="profileDropdownContainer">
     <div class="nav-avatar" onclick="toggleProfileDropdown()">
-        {{ session.get('username')[0].upper() }}
+        {% if session.get('profile_picture') %}
+            <img src="{{ url_for('static', filename=session.get('profile_picture')) }}" alt="Avatar" class="avatar-img" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+        {% else %}
+            {{ session.get('username')[0].upper() }}
+        {% endif %}
     </div>
     <div class="profile-dropdown-menu" id="profileDropdownMenu">
         <div class="dropdown-header">
-            <div class="dropdown-avatar">{{ session.get('username')[0].upper() }}</div>
+            <div class="dropdown-avatar">
+                {% if session.get('profile_picture') %}
+                    <img src="{{ url_for('static', filename=session.get('profile_picture')) }}" alt="Avatar" class="avatar-img" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                {% else %}
+                    {{ session.get('username')[0].upper() }}
+                {% endif %}
+            </div>
             <div class="dropdown-user-info">
                 <h4>{{ session.get('username') }}</h4>
                 <p>{{ session.get('email', 'No email') }}</p>
@@ -16,7 +26,9 @@
         <ul class="dropdown-links">
             <li><a href="/profile"><i class="fas fa-user"></i> My Profile</a></li>
             <li><a href="/profile"><i class="fas fa-history"></i> Download History</a></li>
-            <li><a href="javascript:void(0)" class="disabled-link"><i class="fas fa-cog"></i> Settings</a></li>
+            {% if session.get('role') == 'admin' %}
+            <li><a href="/admin" class="admin-link"><i class="fas fa-shield-alt"></i> Admin Panel</a></li>
+            {% endif %}
         </ul>
         <div class="dropdown-divider"></div>
         <a href="/logout" class="dropdown-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
