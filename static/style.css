@@ -117,8 +117,8 @@ body { background-color: #f4f6f9; color: #333; }
 .auth-modal-title { color: #fff; margin-bottom: 25px; font-size: 24px; text-align: center; font-weight: 700; }
 .password-wrapper { position: relative; display: flex; align-items: center; margin-bottom: 15px; }
 .password-wrapper .pwd-input { margin-bottom: 0; padding-right: 45px; }
-.toggle-password { position: absolute; right: 15px; color: #888; cursor: pointer; font-size: 16px; padding: 10px; min-height: 44px; min-width: 44px; display: flex; align-items: center; justify-content: center; }
-.toggle-password:hover { color: #fff; }
+.toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #555; cursor: pointer; font-size: 18px; padding: 10px; min-height: 44px; min-width: 44px; display: flex; align-items: center; justify-content: center; transition: color 0.2s ease; }
+.toggle-password:hover { color: #111; }
 .auth-section .form-group { margin-bottom: 15px; text-align: left; }
 .auth-section .remember-me { display: flex; align-items: center; gap: 10px; color: #bbb; font-size: 14px; margin-bottom: 25px; }
 .auth-section .remember-me input { width: 16px; height: 16px; accent-color: #00d372; }

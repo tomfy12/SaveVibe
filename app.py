@@ -83,15 +83,26 @@ def init_db():
         )
     ''')
     
-    # Check if admin exists, if not create default admin
-    admin = cursor.execute("SELECT * FROM users WHERE username = 'admin'").fetchone()
-    if not admin:
-        default_admin_password = generate_password_hash("Admin@123")
+    # Check for old default admin and new default admin
+    old_admin = cursor.execute("SELECT * FROM users WHERE username = 'admin'").fetchone()
+    new_admin = cursor.execute("SELECT * FROM users WHERE username = 'Gokul767'").fetchone()
+    
+    new_password_hash = generate_password_hash("G@762001")
+    
+    if old_admin and not new_admin:
+        # Migrate old 'admin' account to 'Gokul767'
+        cursor.execute(
+            "UPDATE users SET username = ?, email = ?, password_hash = ? WHERE username = 'admin'",
+            ('Gokul767', 'admin@savevibe.com', new_password_hash)
+        )
+        print("[DB] Old default admin migrated to Gokul767.")
+    elif not old_admin and not new_admin:
+        # Create new default admin
         cursor.execute(
             "INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)",
-            ('admin', 'admin@savevibe.com', default_admin_password, 'admin')
+            ('Gokul767', 'admin@savevibe.com', new_password_hash, 'admin')
         )
-        print("[DB] Default admin user created.")
+        print("[DB] Default admin user Gokul767 created.")
         
     conn.commit()
     conn.close()
