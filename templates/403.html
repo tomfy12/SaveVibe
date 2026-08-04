@@ -28,30 +28,7 @@
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo">
-            <a href="/" class="logo-link"><span class="logo-yellow">Save</span><span class="logo-white">Vibe.com</span></a>
-        </div>
-        <button class="mobile-menu-toggle" onclick="document.getElementById('navMenu').classList.toggle('active')">
-            <i class="fas fa-bars"></i>
-        </button>
-        <div class="nav-menu" id="navMenu">
-            <a href="/">Home</a>
-            <a href="/about">About Us</a>
-            <a href="/contact">Contact Us</a>
-            {% if session.get('user_id') %}
-                {% if session.get('role') == 'admin' %}
-                    <a href="/admin">Admin Panel</a>
-                {% endif %}
-                {% include '_navbar_profile.html' %}
-            {% else %}
-                <div class="auth-buttons">
-                    <a href="javascript:void(0)" class="btn-login" onclick="openAuthModal('login')">Login</a>
-                    <a href="javascript:void(0)" class="btn-signup" onclick="openAuthModal('signup')">Sign Up</a>
-                </div>
-            {% endif %}
-        </div>
-    </nav>
+    {% include 'components/navbar.html' %}
 
     <div class="container">
         <div class="error-card">
@@ -64,6 +41,6 @@
     
     <!-- Auth Modal Include -->
     {% include '_auth_modal.html' %}
-    {% include '_footer.html' %}
+    {% include 'components/footer.html' %}
 </body>
 </html>

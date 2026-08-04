@@ -1,0 +1,76 @@
+<section id="downloader-section" class="downloader-section">
+    <div class="downloader-content hero-content">
+        <form action="/download" method="POST" class="search-box" id="downloadForm">
+            <i class="fas fa-globe search-icon"></i>
+            <input type="text" name="url" placeholder="Paste YouTube video link" required>
+            <select name="format" class="format-select">
+                <option value="1080">Video 1080p (Full HD)</option>
+                <option value="720" selected>Video 720p (HD)</option>
+                <option value="480">Video 480p (SD)</option>
+                <option value="360">Video 360p</option>
+                <option value="audio">Audio Only (MP3)</option>
+            </select>
+            <button type="submit" class="btn-download"><i class="fas fa-arrow-down"></i> Download</button>
+        </form>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="loader-box">
+            <h3>Downloading HD Video...</h3>
+            <p>Please wait, processing audio & video merging.</p>
+            <div class="progress-container"><div class="progress-bar"></div></div>
+        </div>
+    </div>
+
+    <script>
+        // Downloader Loader with Auto-Hide & Refresh Logic
+        document.getElementById('downloadForm').onsubmit = function(e) {
+            const form = this;
+            const overlay = document.getElementById('loadingOverlay');
+            
+            // એક નવો યુનિક ટોકન બનાવો
+            const token = new Date().getTime().toString();
+            
+            // ફોર્મમાં છુપી રીતે ટોકન એડ કરો
+            let tokenInput = document.getElementById('download_token');
+            if (!tokenInput) {
+                tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'download_token';
+                tokenInput.id = 'download_token';
+                form.appendChild(tokenInput);
+            }
+            tokenInput.value = token;
+
+            // લોડિંગ સ્ક્રીન બતાવો
+            overlay.style.display = 'flex';
+
+            // દર 1 સેકન્ડે ચેક કરો કે પાયથોન સર્વરથી ફાઈલ આવી ગઈ છે કે નહિ
+            const checkCookie = setInterval(function() {
+                if (document.cookie.indexOf('downloadToken=' + token) !== -1) {
+                    // 1. લોડિંગ બંધ કરો
+                    overlay.style.display = 'none';
+                    clearInterval(checkCookie);
+                    
+                    // 2. કુકી ક્લીન કરી દો
+                    document.cookie = "downloadToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+                    // 3. પેજને તાત્કાલિક "Fresh" દેખાડવા માટે ઇનપુટ બોક્સ ખાલી કરી દો
+                    form.reset();
+
+                    // 4. બ્રાઉઝરને ડાઉનલોડ પકડવા 5 સેકન્ડનો ટાઈમ આપીને પછી જ પેજ રીફ્રેશ કરો
+                    setTimeout(function() {
+                        window.location.href = window.location.pathname; 
+                    }, 5000); // 5000ms = 5 seconds delay
+                }
+            }, 1000); 
+            
+            // બેકઅપ ટાઈમઆઉટ 
+            setTimeout(() => { 
+                overlay.style.display = 'none'; 
+                clearInterval(checkCookie);
+            }, 90000); 
+        };
+    </script>
+</section>

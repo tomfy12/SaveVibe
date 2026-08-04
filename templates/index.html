@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SaveVibe.com - YouTube Video Downloader</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2.1">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
@@ -42,33 +42,7 @@
 
 
 
-    <!-- Cleaned Navbar without Login/Signup -->
-    <nav class="navbar">
-        <div class="logo">
-            <a href="/" class="logo-link">
-                <span class="logo-yellow">Save</span><span class="logo-white">Vibe.com</span>
-            </a>
-        </div>
-        <button class="mobile-menu-toggle" onclick="document.getElementById('navMenu').classList.toggle('active')">
-            <i class="fas fa-bars"></i>
-        </button>
-        <div class="nav-menu" id="navMenu">
-            <a href="/" class="active">Home</a>
-            <a href="/about">About Us</a>
-            <a href="/contact">Contact Us</a>
-            {% if session.get('user_id') %}
-                {% if session.get('role') == 'admin' %}
-                    <a href="/admin">Admin Panel</a>
-                {% endif %}
-                {% include '_navbar_profile.html' %}
-            {% else %}
-                <div class="auth-buttons">
-                    <a href="javascript:void(0)" class="btn-login" onclick="openAuthModal('login')">Login</a>
-                    <a href="javascript:void(0)" class="btn-signup" onclick="openAuthModal('signup')">Sign Up</a>
-                </div>
-            {% endif %}
-        </div>
-    </nav>
+    {% include 'components/navbar.html' %}
 
     <!-- Flash Messages Section -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -81,181 +55,34 @@
                     </div>
                 {% endfor %}
             </div>
+            <script>
+                function closeAlert(elementId) {
+                    const alertBox = document.getElementById(elementId);
+                    const flashContainer = document.getElementById('flashContainer');
+                    if (alertBox) {
+                        alertBox.style.opacity = "0"; alertBox.style.transform = "scale(0.95)";
+                        setTimeout(() => {
+                            alertBox.remove();
+                            if (flashContainer && flashContainer.children.length === 0) flashContainer.style.display = "none";
+                        }, 200);
+                    }
+                }
+            </script>
         {% endif %}
     {% endwith %}
 
-    <section class="hero">
-        <div class="hero-content">
-            <h1 class="hero-title"><span class="text-yellow">Save</span><span class="text-white">Vibe.com</span></h1>
-            <h2 class="hero-subtitle">YouTube Video Downloader</h2>
-            <p class="hero-desc">Download YouTube Videos Online Free</p>
-
-            <form action="/download" method="POST" class="search-box" id="downloadForm">
-                <i class="fas fa-globe search-icon"></i>
-                <input type="text" name="url" placeholder="Paste YouTube video link" required>
-                <select name="format" class="format-select">
-                    <option value="1080">Video 1080p (Full HD)</option>
-                    <option value="720" selected>Video 720p (HD)</option>
-                    <option value="480">Video 480p (SD)</option>
-                    <option value="360">Video 360p</option>
-                    <option value="audio">Audio Only (MP3)</option>
-                </select>
-                <button type="submit" class="btn-download"><i class="fas fa-arrow-down"></i> Download</button>
-            </form>
-        </div>
-    </section>
-
-    <!-- How to Use SaveVibe Section -->
-    <section class="how-to-use-section" id="about">
-        <div class="container">
-            <h2 class="section-title">How to Use SaveVibe</h2>
-            <div class="steps-grid">
-                <!-- Step 1 -->
-                <div class="step-card">
-                    <div class="step-icon">
-                        <i class="fas fa-link"></i>
-                    </div>
-                    <div class="step-content">
-                        <h3 class="step-title">1. Copy Video URL</h3>
-                        <p class="step-desc">Copy the YouTube video link from the browser or YouTube app.</p>
-                    </div>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="step-card">
-                    <div class="step-icon">
-                        <i class="fas fa-paste"></i>
-                    </div>
-                    <div class="step-content">
-                        <h3 class="step-title">2. Paste the URL</h3>
-                        <p class="step-desc">Paste the copied link into the SaveVibe URL input field.</p>
-                    </div>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="step-card">
-                    <div class="step-icon">
-                        <i class="fas fa-file-audio"></i>
-                    </div>
-                    <div class="step-content">
-                        <h3 class="step-title">3. Choose Format</h3>
-                        <p class="step-desc">Select your preferred format.</p>
-                        <div class="badges">
-                            <span class="badge badge-primary">MP4 Video</span>
-                            <span class="badge badge-primary">MP3 Audio</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 4 -->
-                <div class="step-card">
-                    <div class="step-icon">
-                        <i class="fas fa-video"></i>
-                    </div>
-                    <div class="step-content">
-                        <h3 class="step-title">4. Choose Quality</h3>
-                        <p class="step-desc">Select the quality you want. Available quality depends on the original video.</p>
-                        <div class="badges wrap-badges">
-                            <span class="badge">144p</span>
-                            <span class="badge">360p</span>
-                            <span class="badge">480p</span>
-                            <span class="badge badge-primary">720p HD</span>
-                            <span class="badge badge-primary">1080p Full HD</span>
-                            <span class="badge badge-premium">2K / 4K</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 5 -->
-                <div class="step-card">
-                    <div class="step-icon">
-                        <i class="fas fa-download"></i>
-                    </div>
-                    <div class="step-content">
-                        <h3 class="step-title">5. Download Instantly</h3>
-                        <p class="step-desc">Click Download and save the file to your device. Downloads begin immediately after processing.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay">
-        <div class="loader-box">
-            <h3>Downloading HD Video...</h3>
-            <p>Please wait, processing audio & video merging.</p>
-            <div class="progress-container"><div class="progress-bar"></div></div>
-        </div>
+    <div class="hero" style="padding-bottom: 90px;">
+        <i class="fas fa-video floating-icon icon-1"></i>
+        <i class="fas fa-music floating-icon icon-2"></i>
+        <i class="fas fa-download floating-icon icon-3"></i>
+        {% include 'components/hero.html' %}
+        {% include 'components/downloader.html' %}
     </div>
 
-    <script>
-        // Flash Alert Functions
-        function closeAlert(elementId) {
-            const alertBox = document.getElementById(elementId);
-            const flashContainer = document.getElementById('flashContainer');
-            if (alertBox) {
-                alertBox.style.opacity = "0"; alertBox.style.transform = "scale(0.95)";
-                setTimeout(() => {
-                    alertBox.remove();
-                    if (flashContainer && flashContainer.children.length === 0) flashContainer.style.display = "none";
-                }, 200);
-            }
-        }
-
-        // Downloader Loader with Auto-Hide & Refresh Logic
-        document.getElementById('downloadForm').onsubmit = function(e) {
-            const form = this;
-            const overlay = document.getElementById('loadingOverlay');
-            
-            // એક નવો યુનિક ટોકન બનાવો
-            const token = new Date().getTime().toString();
-            
-            // ફોર્મમાં છુપી રીતે ટોકન એડ કરો
-            let tokenInput = document.getElementById('download_token');
-            if (!tokenInput) {
-                tokenInput = document.createElement('input');
-                tokenInput.type = 'hidden';
-                tokenInput.name = 'download_token';
-                tokenInput.id = 'download_token';
-                form.appendChild(tokenInput);
-            }
-            tokenInput.value = token;
-
-            // લોડિંગ સ્ક્રીન બતાવો
-            overlay.style.display = 'flex';
-
-            // દર 1 સેકન્ડે ચેક કરો કે પાયથોન સર્વરથી ફાઈલ આવી ગઈ છે કે નહિ
-            const checkCookie = setInterval(function() {
-                if (document.cookie.indexOf('downloadToken=' + token) !== -1) {
-                    
-                    // 1. લોડિંગ બંધ કરો
-                    overlay.style.display = 'none';
-                    clearInterval(checkCookie);
-                    
-                    // 2. કુકી ક્લીન કરી દો
-                    document.cookie = "downloadToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-
-                    // 3. પેજને તાત્કાલિક "Fresh" દેખાડવા માટે ઇનપુટ બોક્સ ખાલી કરી દો
-                    form.reset();
-
-                    // 4. બ્રાઉઝરને ડાઉનલોડ પકડવા 5 સેકન્ડનો ટાઈમ આપીને પછી જ પેજ રીફ્રેશ કરો
-                    setTimeout(function() {
-                        window.location.href = window.location.pathname; 
-                    }, 5000); // 5000ms = 5 seconds delay
-                }
-            }, 1000); 
-            
-            // બેકઅપ ટાઈમઆઉટ 
-            setTimeout(() => { 
-                overlay.style.display = 'none'; 
-                clearInterval(checkCookie);
-            }, 90000); 
-        };
-    </script>
+    {% include 'components/how_to_use.html' %}
+    {% include 'components/footer.html' %}
     
     <!-- Auth Modal Include -->
     {% include '_auth_modal.html' %}
-    {% include '_footer.html' %}
 </body>
 </html>
