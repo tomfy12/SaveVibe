@@ -89,6 +89,10 @@ def init_db():
     
     # Run migrations safely for new download history columns
     try:
+        cursor.execute("ALTER TABLE downloads ADD COLUMN username TEXT DEFAULT 'Guest'")
+    except sqlite3.OperationalError:
+        pass # Column exists
+    try:
         cursor.execute("ALTER TABLE downloads ADD COLUMN user_id INTEGER")
     except sqlite3.OperationalError:
         pass # Column exists
@@ -716,7 +720,7 @@ def profile():
                 COUNT(id) as total_downloads,
                 SUM(CASE WHEN LOWER(format) LIKE '%mp4%' OR LOWER(format) LIKE '%video%' THEN 1 ELSE 0 END) as mp4_count,
                 SUM(CASE WHEN LOWER(format) LIKE '%mp3%' OR LOWER(format) LIKE '%audio%' THEN 1 ELSE 0 END) as mp3_count,
-                SUM(CASE WHEN LOWER(quality) IN ('720p', '1080p', '1440p', '2160p', '4k', '8k') THEN 1 ELSE 0 END) as hd_count
+                SUM(CASE WHEN LOWER(format) IN ('720', '1080', '1440', '2160', '720p', '1080p', '1440p', '2160p', '4k', '8k') THEN 1 ELSE 0 END) as hd_count
             FROM downloads WHERE user_id = ?
             """, 
             (user['id'],)
