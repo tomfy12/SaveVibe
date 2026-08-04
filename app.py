@@ -28,10 +28,13 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'savevibe-super-secret-key-2026'
 
 # Directories Setup
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+if os.path.exists('/data'):
+    DB_PATH = '/data/savevibe.db'
+else:
+    DB_PATH = os.path.join(BASE_DIR, 'savevibe.db')
 DOWNLOAD_FOLDER = os.path.join(BASE_DIR, 'downloads')
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
-DB_PATH = os.path.join(BASE_DIR, 'savevibe.db')
 COOKIE_FILE = os.path.join(BASE_DIR, 'cookies.txt')
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
