@@ -536,40 +536,55 @@ def contact():
 @admin_required
 def admin_panel():
     """Admin Overview Dashboard."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-    total_downloads = cursor.execute("SELECT COUNT(*) FROM downloads").fetchone()[0]
-    total_feedbacks = cursor.execute("SELECT COUNT(*) FROM feedbacks").fetchone()[0]
-    downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY id DESC LIMIT 20").fetchall()
+        total_downloads = cursor.execute("SELECT COUNT(*) FROM downloads").fetchone()[0]
+        total_feedbacks = cursor.execute("SELECT COUNT(*) FROM feedbacks").fetchone()[0]
+        downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY id DESC LIMIT 20").fetchall()
 
-    conn.close()
-    return render_template(
-        'admin.html',
-        total_downloads=total_downloads,
-        total_feedbacks=total_feedbacks,
-        downloads_list=downloads_list
-    )
+        conn.close()
+        return render_template(
+            'admin.html',
+            total_downloads=total_downloads,
+            total_feedbacks=total_feedbacks,
+            downloads_list=downloads_list
+        )
+    except Exception as e:
+        print(f"[Admin Panel Error] Failed to load dashboard: {e}")
+        flash("An error occurred while loading the Admin Dashboard. Please try again.", "danger")
+        return redirect(url_for('home'))
 
 @app.route('/admin_downloads')
 @admin_required
 def admin_downloads():
     """Admin All Downloads Page."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY id DESC").fetchall()
-    conn.close()
-    return render_template('admin_downloads.html', downloads_list=downloads_list)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY id DESC").fetchall()
+        conn.close()
+        return render_template('admin_downloads.html', downloads_list=downloads_list)
+    except Exception as e:
+        print(f"[Admin Downloads Error] Failed to load downloads: {e}")
+        flash("An error occurred while loading the downloads list. Please try again.", "danger")
+        return redirect(url_for('admin_panel'))
 
 @app.route('/admin_feedbacks')
 @admin_required
 def admin_feedbacks():
     """Admin Visitor Feedbacks Page."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    feedbacks_list = cursor.execute("SELECT * FROM feedbacks ORDER BY id DESC").fetchall()
-    conn.close()
-    return render_template('admin_feedbacks.html', feedbacks_list=feedbacks_list)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        feedbacks_list = cursor.execute("SELECT * FROM feedbacks ORDER BY id DESC").fetchall()
+        conn.close()
+        return render_template('admin_feedbacks.html', feedbacks_list=feedbacks_list)
+    except Exception as e:
+        print(f"[Admin Feedbacks Error] Failed to load feedbacks: {e}")
+        flash("An error occurred while loading visitor feedbacks. Please try again.", "danger")
+        return redirect(url_for('admin_panel'))
 
 @app.errorhandler(403)
 def forbidden(e):
