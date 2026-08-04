@@ -31,8 +31,10 @@ app.config['SECRET_KEY'] = 'savevibe-super-secret-key-2026'
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 if os.path.exists('/data'):
     DB_PATH = '/data/savevibe.db'
+    print(f"[Storage] Running on Render: Using persistent disk at {DB_PATH}")
 else:
     DB_PATH = os.path.join(BASE_DIR, 'savevibe.db')
+    print(f"[Storage] Local Environment: Using {DB_PATH}")
 DOWNLOAD_FOLDER = os.path.join(BASE_DIR, 'downloads')
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 COOKIE_FILE = os.path.join(BASE_DIR, 'cookies.txt')
@@ -52,14 +54,38 @@ if os.environ.get('YOUTUBE_COOKIES'):
 FILE_MAX_AGE_SECONDS = 900
 CLEANUP_INTERVAL_SECONDS = 300
 
+def backup_db():
+    """Creates a timestamped backup of the database before migrations to prevent data loss."""
+    if not os.path.exists(DB_PATH):
+        return
+        
+    db_dir = os.path.dirname(DB_PATH)
+    backup_dir = os.path.join(db_dir, 'backups')
+    os.makedirs(backup_dir, exist_ok=True)
+    
+    timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+    backup_path = os.path.join(backup_dir, f'savevibe_backup_{timestamp}.db')
+    
+    try:
+        shutil.copy2(DB_PATH, backup_path)
+        print(f"[Backup] Database successfully backed up to {backup_path}")
+    except Exception as e:
+        print(f"[Backup Error] Failed to create database backup: {e}")
+
 def get_db_connection():
     """Returns a SQLite database connection with row factory for dictionary-like access."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn
+    except sqlite3.Error as e:
+        print(f"[Database Error] CRITICAL: Could not connect to {DB_PATH}. Error: {e}")
+        raise
 
 def init_db():
     """Initializes SQLite database tables for download history, visitor feedback, and users."""
+    backup_db()
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''

@@ -1,2 +1,6 @@
 savevibe.db
 database.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
