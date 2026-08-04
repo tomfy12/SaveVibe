@@ -1,18 +1,15 @@
-<section id="downloader-section" class="downloader-section">
-    <div class="downloader-content hero-content">
-        <form action="/download" method="POST" class="search-box" id="downloadForm">
-            <i class="fas fa-globe search-icon"></i>
-            <input type="text" name="url" placeholder="Paste YouTube video link" required>
-            <select name="format" class="format-select">
-                <option value="1080">Video 1080p (Full HD)</option>
-                <option value="720" selected>Video 720p (HD)</option>
-                <option value="480">Video 480p (SD)</option>
-                <option value="360">Video 360p</option>
-                <option value="audio">Audio Only (MP3)</option>
-            </select>
-            <button type="submit" class="btn-download"><i class="fas fa-arrow-down"></i> Download</button>
-        </form>
-    </div>
+<form action="/download" method="POST" class="search-box" id="downloadForm">
+    <i class="fas fa-globe search-icon"></i>
+    <input type="text" name="url" placeholder="Paste YouTube video link" required>
+    <select name="format" class="format-select">
+        <option value="1080">Video 1080p (Full HD)</option>
+        <option value="720" selected>Video 720p (HD)</option>
+        <option value="480">Video 480p (SD)</option>
+        <option value="360">Video 360p</option>
+        <option value="audio">Audio Only (MP3)</option>
+    </select>
+    <button type="submit" class="btn-download"><i class="fas fa-arrow-down"></i> Download</button>
+</form>
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay">
@@ -73,4 +70,3 @@
             }, 90000); 
         };
     </script>
-</section>
