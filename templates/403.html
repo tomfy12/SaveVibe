@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 Forbidden - SaveVibe.com</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <style>
+        .error-card {
+            background: #17181c;
+            max-width: 500px;
+            margin: 80px auto;
+            padding: 50px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            border-top: 5px solid #ff3333;
+            color: #fff;
+        }
+        .error-icon { font-size: 60px; color: #ff3333; margin-bottom: 20px; }
+        .error-card h1 { font-size: 32px; margin-bottom: 10px; }
+        .error-card p { color: #bbb; margin-bottom: 30px; font-size: 16px; }
+        .btn-home { background: #ffcc00; color: #000; font-weight: 600; padding: 12px 25px; border-radius: 8px; text-decoration: none; display: inline-block; transition: 0.3s; }
+        .btn-home:hover { background: #e6b800; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/" class="logo-link"><span class="logo-yellow">Save</span><span class="logo-white">Vibe.com</span></a>
+        </div>
+        <div class="nav-menu">
+            <a href="/">Home</a>
+            <a href="/about">About Us</a>
+            <a href="/contact">Contact Us</a>
+            {% if session.get('user_id') %}
+                {% if session.get('role') == 'admin' %}
+                    <a href="/admin">Admin Panel</a>
+                {% endif %}
+                <a href="/profile">Profile</a>
+                <a href="/logout">Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="error-card">
+            <i class="fas fa-lock error-icon"></i>
+            <h1>403 Forbidden</h1>
+            <p>You don't have permission to access this page.</p>
+            <a href="/" class="btn-home">Return to Home</a>
+        </div>
+    </div>
+</body>
+</html>

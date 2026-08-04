@@ -6,10 +6,12 @@ import sqlite3
 import threading
 from flask import (
     Flask, render_template, request, jsonify, send_file,
-    flash, redirect, url_for, make_response, Response, stream_with_context
+    flash, redirect, url_for, make_response, Response, stream_with_context, session, abort
 )
 import yt_dlp
 import requests
+from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 
 import shutil
 
@@ -50,7 +52,7 @@ def get_db_connection():
     return conn
 
 def init_db():
-    """Initializes SQLite database tables for download history and visitor feedback."""
+    """Initializes SQLite database tables for download history, visitor feedback, and users."""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
@@ -70,6 +72,27 @@ def init_db():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT DEFAULT 'user',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Check if admin exists, if not create default admin
+    admin = cursor.execute("SELECT * FROM users WHERE username = 'admin'").fetchone()
+    if not admin:
+        default_admin_password = generate_password_hash("Admin@123")
+        cursor.execute(
+            "INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)",
+            ('admin', 'admin@savevibe.com', default_admin_password, 'admin')
+        )
+        print("[DB] Default admin user created.")
+        
     conn.commit()
     conn.close()
 
@@ -175,16 +198,36 @@ def get_yt_dlp_options(format_type='mp4', custom_filename=None):
 def log_download_db(title):
     """Logs download title into SQLite DB."""
     try:
+        username = session.get('username', 'Guest')
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
             "INSERT INTO downloads (username, video_title) VALUES (?, ?)",
-            ('Guest', title)
+            (username, title)
         )
         conn.commit()
         conn.close()
     except Exception as db_err:
         print(f"[DB Error] Failed to log download: {db_err}")
+
+# --- AUTH DECORATORS ---
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Please log in to access this page.", "warning")
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session or session.get("role") != "admin":
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated_function
 
 # --- ROUTES ---
 
@@ -355,6 +398,7 @@ def contact():
 
 @app.route('/admin')
 @app.route('/admin_panel')
+@admin_required
 def admin_panel():
     """Admin Overview Dashboard."""
     conn = get_db_connection()
@@ -373,6 +417,7 @@ def admin_panel():
     )
 
 @app.route('/admin_downloads')
+@admin_required
 def admin_downloads():
     """Admin All Downloads Page."""
     conn = get_db_connection()
@@ -382,6 +427,7 @@ def admin_downloads():
     return render_template('admin_downloads.html', downloads_list=downloads_list)
 
 @app.route('/admin_feedbacks')
+@admin_required
 def admin_feedbacks():
     """Admin Visitor Feedbacks Page."""
     conn = get_db_connection()
@@ -390,11 +436,110 @@ def admin_feedbacks():
     conn.close()
     return render_template('admin_feedbacks.html', feedbacks_list=feedbacks_list)
 
+@app.errorhandler(403)
+def forbidden(e):
+    return render_template('403.html'), 403
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        remember = request.form.get('remember') == 'on'
+        
+        if not username or not password:
+            flash("Please enter both username and password.", "danger")
+            return redirect(url_for('login'))
+            
+        conn = get_db_connection()
+        user = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        conn.close()
+        
+        if user and check_password_hash(user['password_hash'], password):
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            session['role'] = user['role']
+            # Implement remember me by setting session to permanent
+            if remember:
+                session.permanent = True
+            flash("Login Successful!", "success")
+            return redirect(url_for('home'))
+        else:
+            flash("Invalid Username or Password.", "danger")
+            
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        if not username or not email or not password or not confirm_password:
+            flash("Please fill out all fields.", "warning")
+            return redirect(url_for('register'))
+            
+        if password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return redirect(url_for('register'))
+            
+        if len(password) < 8:
+            flash("Password must be at least 8 characters long.", "danger")
+            return redirect(url_for('register'))
+            
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        existing_user = cursor.execute("SELECT * FROM users WHERE username = ? OR email = ?", (username, email)).fetchone()
+        if existing_user:
+            conn.close()
+            if existing_user['username'] == username:
+                flash("Username already exists.", "danger")
+            else:
+                flash("Email already exists.", "danger")
+            return redirect(url_for('register'))
+            
+        hashed_password = generate_password_hash(password)
+        try:
+            cursor.execute(
+                "INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)",
+                (username, email, hashed_password, 'user')
+            )
+            conn.commit()
+            flash("Account Created Successfully! Please log in.", "success")
+            return redirect(url_for('login'))
+        except Exception as e:
+            print(f"[DB Error] Registration failed: {e}")
+            flash("Something went wrong during registration.", "danger")
+        finally:
+            conn.close()
+            
+    return render_template('register.html')
+
 @app.route('/logout')
 def logout():
-    """Admin Logout."""
+    """User Logout."""
+    session.clear()
     flash("You have been logged out.", "info")
     return redirect(url_for('home'))
+
+@app.route('/profile')
+@login_required
+def profile():
+    """User Profile."""
+    conn = get_db_connection()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
+    if not user:
+        conn.close()
+        session.clear()
+        return redirect(url_for('login'))
+        
+    downloads = conn.execute("SELECT * FROM downloads WHERE username = ? ORDER BY id DESC LIMIT 50", (user['username'],)).fetchall()
+    conn.close()
+    
+    return render_template('profile.html', user=user, downloads=downloads)
 
 # --- RESTful API ENDPOINTS ---
 
