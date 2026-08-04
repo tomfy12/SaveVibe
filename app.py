@@ -13,7 +13,7 @@ import requests
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 import shutil
 
@@ -305,8 +305,9 @@ def log_download_db(title, format_type='Unknown', file_size='Unknown', thumbnail
         username = session.get('username', 'Guest')
         user_id = session.get('user_id', None)
         
-        # Use local timezone via python's datetime.now()
-        local_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # Use IST (Asia/Kolkata) explicitly
+        ist = timezone(timedelta(hours=5, minutes=30))
+        local_time = datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -542,7 +543,7 @@ def admin_panel():
 
         total_downloads = cursor.execute("SELECT COUNT(*) FROM downloads").fetchone()[0]
         total_feedbacks = cursor.execute("SELECT COUNT(*) FROM feedbacks").fetchone()[0]
-        downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY id DESC LIMIT 20").fetchall()
+        downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY timestamp DESC, id DESC LIMIT 20").fetchall()
 
         conn.close()
         return render_template(
@@ -563,7 +564,7 @@ def admin_downloads():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY id DESC").fetchall()
+        downloads_list = cursor.execute("SELECT * FROM downloads ORDER BY timestamp DESC, id DESC").fetchall()
         conn.close()
         return render_template('admin_downloads.html', downloads_list=downloads_list)
     except Exception as e:
@@ -578,7 +579,7 @@ def admin_feedbacks():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        feedbacks_list = cursor.execute("SELECT * FROM feedbacks ORDER BY id DESC").fetchall()
+        feedbacks_list = cursor.execute("SELECT * FROM feedbacks ORDER BY timestamp DESC, id DESC").fetchall()
         conn.close()
         return render_template('admin_feedbacks.html', feedbacks_list=feedbacks_list)
     except Exception as e:
@@ -698,26 +699,35 @@ def logout():
 @login_required
 def profile():
     """User Profile."""
-    conn = get_db_connection()
-    user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
-    if not user:
-        conn.close()
-        session.clear()
-        return redirect(url_for('login'))
+    try:
+        conn = get_db_connection()
+        user_row = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
+        if not user_row:
+            conn.close()
+            session.clear()
+            return redirect(url_for('login'))
+            
+        user = dict(user_row)
         
-    # Get only the user's downloads using user_id if available, fallback to username matching
-    downloads = conn.execute(
-        "SELECT * FROM downloads WHERE user_id = ? OR (user_id IS NULL AND username = ?) ORDER BY id DESC LIMIT 50", 
-        (user['id'], user['username'])
-    ).fetchall()
-    
-    # Calculate stats
-    total_count = len(downloads)
-    latest_download = downloads[0] if total_count > 0 else None
+        # Get only the user's downloads strictly by user_id
+        downloads_rows = conn.execute(
+            "SELECT * FROM downloads WHERE user_id = ? ORDER BY timestamp DESC, id DESC LIMIT 50", 
+            (user['id'],)
+        ).fetchall()
+        
+        downloads = [dict(d) for d in downloads_rows]
+        
+        # Calculate stats
+        total_count = len(downloads)
+        latest_download = downloads[0] if total_count > 0 else None
 
-    conn.close()
-    
-    return render_template('profile.html', user=user, downloads=downloads, total_downloads=total_count, latest_download=latest_download)
+        conn.close()
+        
+        return render_template('profile.html', user=user, downloads=downloads, total_downloads=total_count, latest_download=latest_download)
+    except Exception as e:
+        print(f"[Profile Error] Failed to load profile: {e}")
+        flash("An error occurred while loading your profile.", "danger")
+        return redirect(url_for('home'))
 
 @app.route('/update_profile', methods=['POST'])
 @login_required
@@ -863,9 +873,14 @@ def api_download():
             thumbnail = info.get('thumbnail', '')
             filesize = info.get('filesize') or info.get('filesize_approx')
             filesize_str = f"{round(filesize / (1024 * 1024), 2)} MB" if filesize else "Unknown"
-            log_download_db(title=video_title, format_type=ext.upper(), file_size=filesize_str, thumbnail=thumbnail)
 
             req = requests.get(stream_url, stream=True, timeout=15)
+            if req.status_code != 200:
+                raise ValueError(f"Stream URL is inaccessible (HTTP {req.status_code})")
+            
+            # Log download only after verifying stream is accessible
+            log_download_db(title=video_title, format_type=ext.upper(), file_size=filesize_str, thumbnail=thumbnail)
+
             clean_name = f"{sanitize_filename(video_title)}.{ext}"
 
             return Response(
