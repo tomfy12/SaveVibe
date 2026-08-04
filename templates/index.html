@@ -40,17 +40,7 @@
 </head>
 <body>
 
-    <!-- Reusable Macro -->
-    {% macro feature_card(title, link="#", is_coming_soon=false) %}
-        <a href="{{ is_coming_soon and '#' or link }}" class="feature-card {% if is_coming_soon %}disabled-card{% endif %}">
-            <div class="icon-box"><i class="fab fa-youtube"></i></div>
-            <div class="card-text">
-                <h3>{{ title }}</h3>
-                {% if is_coming_soon %} <span class="badge-coming-soon">Coming Soon</span> {% endif %}
-            </div>
-            <i class="fas fa-arrow-right arrow-icon {% if is_coming_soon %}disabled-arrow{% endif %}"></i>
-        </a>
-    {% endmacro %}
+
 
     <!-- Cleaned Navbar without Login/Signup -->
     <nav class="navbar">
@@ -115,16 +105,77 @@
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features-section" id="about">
+    <!-- How to Use SaveVibe Section -->
+    <section class="how-to-use-section" id="about">
         <div class="container">
-            <div class="grid-container">
-                {{ feature_card('YouTube Video Downloader', link='#', is_coming_soon=false) }}
-                {{ feature_card('YouTube Shorts Downloader', is_coming_soon=true) }}
-                {{ feature_card('YouTube to MP3', is_coming_soon=true) }}
-                {{ feature_card('YouTube Audio Downloader', is_coming_soon=true) }}
-                {{ feature_card('YouTube Music Downloader', is_coming_soon=true) }}
-                {{ feature_card('YouTube Movies', is_coming_soon=true) }}
+            <h2 class="section-title">How to Use SaveVibe</h2>
+            <div class="steps-grid">
+                <!-- Step 1 -->
+                <div class="step-card">
+                    <div class="step-icon">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3 class="step-title">1. Copy Video URL</h3>
+                        <p class="step-desc">Copy the YouTube video link from the browser or YouTube app.</p>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="step-card">
+                    <div class="step-icon">
+                        <i class="fas fa-paste"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3 class="step-title">2. Paste the URL</h3>
+                        <p class="step-desc">Paste the copied link into the SaveVibe URL input field.</p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="step-card">
+                    <div class="step-icon">
+                        <i class="fas fa-file-audio"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3 class="step-title">3. Choose Format</h3>
+                        <p class="step-desc">Select your preferred format.</p>
+                        <div class="badges">
+                            <span class="badge badge-primary">MP4 Video</span>
+                            <span class="badge badge-primary">MP3 Audio</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="step-card">
+                    <div class="step-icon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3 class="step-title">4. Choose Quality</h3>
+                        <p class="step-desc">Select the quality you want. Available quality depends on the original video.</p>
+                        <div class="badges wrap-badges">
+                            <span class="badge">144p</span>
+                            <span class="badge">360p</span>
+                            <span class="badge">480p</span>
+                            <span class="badge badge-primary">720p HD</span>
+                            <span class="badge badge-primary">1080p Full HD</span>
+                            <span class="badge badge-premium">2K / 4K</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5 -->
+                <div class="step-card">
+                    <div class="step-icon">
+                        <i class="fas fa-download"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3 class="step-title">5. Download Instantly</h3>
+                        <p class="step-desc">Click Download and save the file to your device. Downloads begin immediately after processing.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
