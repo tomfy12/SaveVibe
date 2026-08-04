@@ -10,15 +10,15 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <style>
         .profile-wrapper {
-            max-width: 1200px;
+            max-width: 500px;
             margin: 40px auto;
-            display: grid;
-            grid-template-columns: 300px 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 30px;
             padding: 0 20px;
         }
         @media (max-width: 992px) {
-            .profile-wrapper { grid-template-columns: 1fr; }
+            .profile-wrapper { max-width: 100%; }
         }
         
         /* Profile Card Styles */
@@ -160,60 +160,7 @@
             <a href="javascript:void(0)" class="btn-edit-profile" onclick="openEditProfileModal()"><i class="fas fa-edit"></i> Edit Profile</a>
         </div>
 
-        <!-- Download History Card (Main content) -->
-        <div class="history-card">
-            <div class="history-header">
-                <h2><i class="fas fa-history" style="color: #ffcc00;"></i> Download History</h2>
-                <div class="search-history">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="historySearch" placeholder="Search by video title..." onkeyup="filterHistory()">
-                </div>
-            </div>
-            
-            {% if downloads %}
-                <div class="table-responsive">
-                    <table class="history-table" id="historyTable">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Thumbnail</th>
-                                <th>Video Title</th>
-                                <th>Format</th>
-                                <th>Size</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in downloads %}
-                                <tr>
-                                    <td>{{ loop.index }}</td>
-                                    <td class="thumb-cell">
-                                        {% if item.get('thumbnail') %}
-                                            <img src="{{ item['thumbnail'] }}" alt="Thumbnail">
-                                        {% else %}
-                                            <div style="width: 60px; height: 40px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #aaa;"><i class="fas fa-video"></i></div>
-                                        {% endif %}
-                                    </td>
-                                    <td class="title-cell"><span>{{ item['video_title'] }}</span></td>
-                                    <td><span style="font-weight: 500;">{{ item.get('format', 'Unknown') }}</span></td>
-                                    <td style="color: #888;">{{ item.get('file_size', 'Unknown') }}</td>
-                                    <td style="color: #888;">{{ item['timestamp'] }}</td>
-                                    <td><span class="status-badge">{{ item.get('status', 'Completed') }}</span></td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div style="text-align: center; padding: 60px 20px; background: #f8f9fa; border-radius: 12px;">
-                    <i class="fas fa-box-open" style="font-size: 50px; color: #ddd; margin-bottom: 20px;"></i>
-                    <h3 style="color: #555; margin-bottom: 10px;">No downloads yet!</h3>
-                    <p style="color: #888; margin-bottom: 20px;">Start downloading videos and your history will appear here.</p>
-                    <a href="/" class="btn-download" style="text-decoration: none;">Download Now</a>
-                </div>
-            {% endif %}
-        </div>
+
     </div>
 
     <!-- Edit Profile Modal -->

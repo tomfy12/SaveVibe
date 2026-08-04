@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download History - SaveVibe.com</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <style>
+        .profile-wrapper {
+            max-width: 1000px;
+            margin: 40px auto;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            padding: 0 20px;
+        }
+        @media (max-width: 992px) {
+            .profile-wrapper { max-width: 100%; }
+        }
+        
+        /* History Card Styles */
+        .history-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-top: 5px solid #ffcc00;
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .history-header h2 { color: #17181c; margin: 0; font-size: 22px; display: flex; align-items: center; gap: 10px; }
+        
+        .search-history {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+        }
+        .search-history input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 1px solid #e1e1e1;
+            border-radius: 6px;
+            outline: none;
+            font-size: 14px;
+        }
+        .search-history i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; }
+        
+        .history-table { width: 100%; border-collapse: collapse; }
+        .history-table th { padding: 15px; background: #f8f9fa; text-align: left; color: #555; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #eee; }
+        .history-table td { padding: 15px; border-bottom: 1px solid #eee; color: #444; font-size: 14px; vertical-align: middle; }
+        
+        .thumb-cell img { width: 60px; height: 40px; border-radius: 4px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .title-cell { max-width: 250px; font-weight: 500; }
+        .title-cell span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #d4edda; color: #155724; }
+        
+    </style>
+</head>
+<body>
+    {% include 'components/navbar.html' %}
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container" style="margin-top: 20px;">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" style="text-align: center; padding: 12px; border-radius: 6px; background: {% if category == 'success' %}#2ed573{% elif category == 'info' %}#1e90ff{% else %}#ff3333{% endif %}; color: white; font-weight: 500;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="profile-wrapper">
+
+        <!-- Download History Card (Main content) -->
+        <div class="history-card">
+            <div class="history-header">
+                <h2><i class="fas fa-history" style="color: #ffcc00;"></i> Download History</h2>
+                <div class="search-history">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="historySearch" placeholder="Search by video title..." onkeyup="filterHistory()">
+                </div>
+            </div>
+            
+            {% if downloads %}
+                <div class="table-responsive">
+                    <table class="history-table" id="historyTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Thumbnail</th>
+                                <th>Video Title</th>
+                                <th>Format</th>
+                                <th>Size</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in downloads %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td class="thumb-cell">
+                                        {% if item.get('thumbnail') %}
+                                            <img src="{{ item['thumbnail'] }}" alt="Thumbnail">
+                                        {% else %}
+                                            <div style="width: 60px; height: 40px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #aaa;"><i class="fas fa-video"></i></div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="title-cell"><span>{{ item['video_title'] }}</span></td>
+                                    <td><span style="font-weight: 500;">{{ item.get('format', 'Unknown') }}</span></td>
+                                    <td style="color: #888;">{{ item.get('file_size', 'Unknown') }}</td>
+                                    <td style="color: #888;">{{ item['timestamp'] }}</td>
+                                    <td><span class="status-badge">{{ item.get('status', 'Completed') }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 60px 20px; background: #f8f9fa; border-radius: 12px;">
+                    <i class="fas fa-box-open" style="font-size: 50px; color: #ddd; margin-bottom: 20px;"></i>
+                    <h3 style="color: #555; margin-bottom: 10px;">No downloads yet!</h3>
+                    <p style="color: #888; margin-bottom: 20px;">Start downloading videos and your history will appear here.</p>
+                    <a href="/" class="btn-download" style="text-decoration: none;">Download Now</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+
+        function filterHistory() {
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("historySearch");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("historyTable");
+            
+            if (!table) return;
+            
+            tr = table.getElementsByTagName("tr");
+
+            for (i = 1; i < tr.length; i++) {
+                // target column index 2 which is Video Title
+                td = tr[i].getElementsByTagName("td")[2]; 
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }       
+            }
+        }
+    </script>
+    {% include 'components/footer.html' %}
+</body>
+</html>

@@ -729,6 +729,36 @@ def profile():
         flash("An error occurred while loading your profile.", "danger")
         return redirect(url_for('home'))
 
+@app.route('/history')
+@login_required
+def history():
+    """User Download History."""
+    try:
+        conn = get_db_connection()
+        user_row = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
+        if not user_row:
+            conn.close()
+            session.clear()
+            return redirect(url_for('login'))
+            
+        user = dict(user_row)
+        
+        # Get only the user's downloads strictly by user_id
+        downloads_rows = conn.execute(
+            "SELECT * FROM downloads WHERE user_id = ? ORDER BY timestamp DESC, id DESC LIMIT 50", 
+            (user['id'],)
+        ).fetchall()
+        
+        downloads = [dict(d) for d in downloads_rows]
+        
+        conn.close()
+        
+        return render_template('history.html', user=user, downloads=downloads)
+    except Exception as e:
+        print(f"[History Error] Failed to load history: {e}")
+        flash("An error occurred while loading your history.", "danger")
+        return redirect(url_for('home'))
+
 @app.route('/update_profile', methods=['POST'])
 @login_required
 def update_profile():
