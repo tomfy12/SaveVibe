@@ -10,8 +10,8 @@
         </button>
         <div class="nav-menu" id="navMenu">
             <a href="/" class="active">Home</a>
-            <a href="/about">About Us</a>
-            <a href="/contact">Contact Us</a>
+            <a href="{{ url_for('about') }}">About Us</a>
+            <a href="{{ url_for('contact') }}">Contact Us</a>
             {% if session.get('user_id') %}
 
                 {% include '_navbar_profile.html' %}
